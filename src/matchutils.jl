@@ -7,28 +7,34 @@
 #
 # "sub" version of slicedim, to get an array slice as a view
 
-subslicedim{T<:AbstractArray}(A::T, d::Integer, i) = 
-    (if d < 1 || d > ndims(A);  throw(BoundsError()) end; sz = size(A); sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...))
+function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
+    if d < 1 || d > ndims(A)
+        throw(BoundsError()) 
+    end
+    sz = size(A)
+    # Force 1x..x1 slices to extract the value
+    # TODO: Note that this is no longer a reference, so there should be a better fix...
+    otherdims = [sz...]
+    splice!(otherdims, d)
+    if all(otherdims .== 1)
+        A[[ n==d ? i : 1 for n in 1:ndims(A) ]...]
+    else
+        sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+    end
+end
 
 subslicedim{T<:AbstractVector}(A::T, d::Integer, i) = 
-    (if d != 1;  throw(BoundsError()) end;  A[i])
+    (if d < 0 || d > 1;  throw(BoundsError()) end;  A[i])
 
 #
 # getsyms
 #
 # get all symbols in an expression (including undefined symbols)
 
-getsyms(e) = Set{Symbol}()
-getsyms(e::Symbol) = Set{Symbol}(e)
-
-function getsyms(e::Expr)
-    syms = Set{Symbol}(e.head)
-    for a in e.args
-        union!(syms, getsyms(a))
-    end
-    syms
-end
-
+getsyms(e)                 = Set{Symbol}()
+getsyms(e ::Symbol)        = Set{Symbol}(e)
+getsyms(e ::Expr)          = union(Set{Symbol}(e.head), getsyms(e.args))
+getsyms(es::AbstractArray) = union([getsyms(e) for e in es]...)
 
 #
 # varsym
