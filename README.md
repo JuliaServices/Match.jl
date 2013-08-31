@@ -445,28 +445,28 @@ There are a few useful things to be aware of when using PatternMatch.
     "2 is the second part of a tuple"
     ```
 
-
   Note that variables not referenced in the result expression will not
-  be bound.
+  be bound (e.g., ``n`` is never bound above).
 
-* There's also a bug in the implementation, where variables are
-  sometimes not properly escaped.  For example, if `a` is bound before
-  the macro above is bound, it will be captured and used by the macro.:
+* If you want to see the code generated for a macro, you can use
+  `PatternMatch.fmatch`, passing in quoted expressions:
 
-    ```julia
-    julia> a = 1
-    1
-
-    julia> test(a) = @match a begin
+    julia> PatternMatch.fmatch(:a, :(begin
                n::Int           => "Integer"
-               _::FloatingPoint => "Float"
-           end
-    # methods for generic function test
-    test(a) at none:1
-
-    julia> test("Julia is great")
-    "Integer"
-    ```
-  This is issue #1, and will be addressed.
+               m::FloatingPoint => "Float"
+           end))
+    quote  # none, line 2:
+        if isa(a,Int) # line 377:
+            "Integer"
+        else  # /home/kmsquire/.julia/v0.2/PatternMatch/src/matchmacro.jl, line 379:
+            begin  # line 3:
+                if isa(a,FloatingPoint) # line 377:
+                    "Float"
+                else  # /home/kmsquire/.julia/v0.2/PatternMatch/src/matchmacro.jl, line 379:
+                    nothing
+                end
+            end
+        end
+    end
 
 
