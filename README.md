@@ -27,7 +27,6 @@ possible.  But it can be done here.
 ```julia
 julia> matchtype(item) = @match item begin
            n::Int               => println("Integers are awesome!")
-           "Kevin"              => println("Hi Kevin!")
            str::String          => println("Strings are the best")
            m::Dict{Int, String} => println("Ints for Strings?")
            d::Dict              => println("A Dict! Looking up a word?")
