@@ -273,12 +273,7 @@ unapply(vals::Tuple, exprs::Tuple, syms, _eval::Function, info::MatchExprInfo=Ma
 
 # fallback
 function unapply(val, expr, _, _eval::Function, info::MatchExprInfo=MatchExprInfo())
-    # special case for (constant) Arrays or subslicedim function calls
-    if isa(val, Array) || isexpr(val, :call) && (val.args[1] == :subslicedim || val.args[1] == :slicedim)
-        push!(info.tests, :(all($val .== $expr)))
-    else
-        push!(info.tests, :($val == $expr))
-    end
+    push!(info.tests, :($val == $expr))
     info
 end
 
@@ -310,11 +305,10 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
                     error("elipses (...) are only allowed in the last position of an Array pattern match.")
                 end
                 sym = to_array_type(exprs[end].args[1])
-                #unapply(_eval(:(subslicedim($val, $dim, $i:size($val,$dim)))), sym, syms, _eval, info)
-                unapply(_eval(:(subslicedim($val, $dim + max(ndims($val)-2,0), $i:size($val,$dim+max(ndims($val)-2,0))))), sym, syms, _eval, info)
+                unapply(_eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i:size($val,$dim+max(ndims($val)-2,0))))), 
+                        sym, syms, _eval, info)
             else
-                #s = _eval(:(subslicedim($val, $dim, $i)))
-                s = _eval(:(subslicedim($val, $dim + max(ndims($val)-2,0), $i)))
+                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i)))
                 unapply(s, exprs[i], syms, _eval, info)
             end
         end
