@@ -8,7 +8,7 @@ include:
 * Deep matching within data types and matrices
 * Variable binding within matches
 
-For alternatives to `PatternMatch`, check out the following modules
+For alternatives to `Match`, check out the following modules
 
 * [`PatternDispatch.jl`](https://github.com/toivoh/PatternDispatch.jl) for a more Julia-like function dispatch on patterns.
 
@@ -20,14 +20,14 @@ For alternatives to `PatternMatch`, check out the following modules
 ## Installation
 Use the Julia package manager.  Within Julia, do:
 ```julia
-Pkg.add("PatternMatch")
+Pkg.add("Match")
 ```
 
 ## Usage
 
 The package provides one macro, `@match`, which can be used as:
 
-    using PatternMatch
+    using Match
 
     @match item begin
         pattern1              => result1
@@ -47,7 +47,7 @@ dispatch, and it is generally be better to use those mechanisms when
 possible.  But it can be done here.
 
 ```julia
-julia> using PatternMatch
+julia> using Match
 
 julia> matchtype(item) = @match item begin
            n::Int               => println("Integers are awesome!")
@@ -159,7 +159,7 @@ Help!
 
 ### Regular Expressions
 
-Julia has regular expressions already, of course.  PatternMatch builds
+Julia has regular expressions already, of course.  Match builds
 on them by allowing binding, by treating patterns like functions.
 
 ```julia
@@ -204,10 +204,10 @@ julia> regex_test("Open the pod bay doors, HAL.")
 
 ### Deep Matching Against Arrays
 
-`Arrays` are intrinsic to Julia.  PatternMatch allows deep matching
+`Arrays` are intrinsic to Julia.  Match allows deep matching
 against arrays.
 
-The following examples also demonstrate how PatternMatch can be used
+The following examples also demonstrate how Match can be used
 strictly for its extraction/binding capabilities, by only matching
 against one pattern.
 
@@ -383,7 +383,7 @@ julia> z
 
 ### Notes/Gotchas
 
-There are a few useful things to be aware of when using PatternMatch.
+There are a few useful things to be aware of when using Match.
 
 * Guards need a comma and an `end`:
 
@@ -426,7 +426,7 @@ There are a few useful things to be aware of when using PatternMatch.
 * In Scala, `_` is a wildcard pattern which matches anything, and is
   not bound as a variable.  
 
-  In `PatternMatch` for Julia, `_` has no special meaning.  It can be
+  In `Match` for Julia, `_` has no special meaning.  It can be
   used as a wildcard, and will be bound to the last use if it is
   referenced in the result expression:
 
@@ -448,21 +448,21 @@ There are a few useful things to be aware of when using PatternMatch.
   be bound (e.g., ``n`` is never bound above).
 
 * If you want to see the code generated for a macro, you can use
-  `PatternMatch.fmatch`, passing in quoted expressions:
+  `Match.fmatch`, passing in quoted expressions:
 
     ```julia
-    julia> PatternMatch.fmatch(:a, :(begin
+    julia> Match.fmatch(:a, :(begin
                n::Int           => "Integer"
                m::FloatingPoint => "Float"
            end))
     quote  # none, line 2:
         if isa(a,Int) # line 377:
             "Integer"
-        else  # /home/kmsquire/.julia/v0.2/PatternMatch/src/matchmacro.jl, line 379:
+        else  # /home/kmsquire/.julia/v0.2/Match/src/matchmacro.jl, line 379:
             begin  # line 3:
                 if isa(a,FloatingPoint) # line 377:
                     "Float"
-                else  # /home/kmsquire/.julia/v0.2/PatternMatch/src/matchmacro.jl, line 379:
+                else  # /home/kmsquire/.julia/v0.2/Match/src/matchmacro.jl, line 379:
                     nothing
                 end
             end
