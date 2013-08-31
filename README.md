@@ -19,14 +19,16 @@ For alternatives to `PatternMatch`, check out the following modules
 
 
 ## Installation
-Within Julia, do:
+Use the Julia package manager.  Within Julia, do:
 ```julia
-Pkg.add("Match")
+Pkg.add("PatternMatch")
 ```
 
 ## Usage
 
 The package provides one macro, `@match`, which can be used as:
+
+    using PatternMatch
 
     @match item begin
         pattern1              => result1
@@ -98,8 +100,6 @@ julia> personinfo(person) = @match person begin
            Person(firstname, lastname ,Address(_, "Cambridge", zip)) => println("$firstname $lastname lives in zip $zip")
            Person(_...)                                              => println("Unknown person!")
        end
-# methods for generic function personinfo
-personinfo(person) at none:1
 
 julia> personinfo(Person("Julia", "Robinson", Address("450 Serra Mall", "Stanford", "94305")))
 Found Julia Robinson
@@ -132,9 +132,6 @@ julia> function parse_arg(arg::String, value::Any=nothing)
              bad                                                 => println("Unknown argument: $bad")
           end
        end
-# methods for generic function parse_arg
-parse_arg(arg::String) at none:2
-parse_arg(arg::String,value) at none:2
 
 julia> parse_arg("-l", "eng")
 Language set to eng
@@ -179,9 +176,6 @@ julia> function regex_test(str, a=199)
               r"MCM.*"                                                 => "In the twentieth century..."
            end
        end
-# methods for generic function regex_test
-regex_test(str) at none:2
-regex_test(str,a) at none:2
 
 julia> regex_test("199.27.77.133")
 "199._.77._ address found"
@@ -388,9 +382,9 @@ julia> z
  6 8
 ```
 
-### Gotchas
+### Notes/Gotchas
 
-There are a few things to be aware of when using PatternMatch.
+There are a few useful things to be aware of when using PatternMatch.
 
 * Guards need a comma and an `end`:
 
@@ -424,13 +418,36 @@ There are a few things to be aware of when using PatternMatch.
                n::Int           => "Integer"
                m::FloatingPoint => "Float"
            end
-    # methods for generic function test
-    test(a) at none:1
 
     julia> test("Julia is great")
 
     julia>
     ```
+
+* In Scala, `_` is a wildcard pattern which matches anything, and is
+  not bound as a variable.  
+
+  In `PatternMatch` for Julia, `_` has no special meaning.  It can be
+  used as a wildcard, and will be bound to the last use if it is
+  referenced in the result expression:
+
+    ```julia
+    julia> test(a) = @match a begin
+               n::Int           => "Integer"
+               _::FloatingPoint => "$_ is a Float"
+               (_,_)            => "$_ is the second part of a tuple"
+           end
+
+    julia> test(1.0)
+    "1.0 is a Float"
+
+    julia> test((1,2))
+    "2 is the second part of a tuple"
+    ```
+
+
+  Note that variables not referenced in the result expression will not
+  be bound.
 
 * There's also a bug in the implementation, where variables are
   sometimes not properly escaped.  For example, if `a` is bound before
@@ -442,7 +459,7 @@ There are a few things to be aware of when using PatternMatch.
 
     julia> test(a) = @match a begin
                n::Int           => "Integer"
-               m::FloatingPoint => "Float"
+               _::FloatingPoint => "Float"
            end
     # methods for generic function test
     test(a) at none:1
