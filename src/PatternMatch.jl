@@ -1,4 +1,4 @@
-module Match
+module PatternMatch
 
 using Base.Meta
 
