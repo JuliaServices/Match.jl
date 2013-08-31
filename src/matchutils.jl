@@ -27,22 +27,22 @@ subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
     (if d < 0 || d > 1;  throw(BoundsError()) end;  A[i])
 
 #
-# getsyms
+# getvars
 #
 # get all symbols in an expression (including undefined symbols)
 
-getsyms(e)                 = Set{Symbol}()
-getsyms(e ::Symbol)        = Set{Symbol}(e)
-getsyms(e ::Expr)          = union(Set{Symbol}(e.head), getsyms(e.args))
-getsyms(es::AbstractArray) = union([getsyms(e) for e in es]...)
+getvars(e)                 = Set{Symbol}()
+getvars(e ::Symbol)        = Set{Symbol}(e)
+getvars(e ::Expr)          = getvars(e.args)
+getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 #
-# varsym
+# getvar
 #
 # get the symbol from a :(::) expression
 
-varsym(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
-varsym(x::Symbol) = x
+getvar(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
+getvar(x::Symbol) = x
 
 
 #

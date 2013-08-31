@@ -54,7 +54,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
     if length(expr.args) == 2 && isexpr(expr.args[2], :if)
 
         push!(info.guards, expr.args[2].args[1])
-        guardsyms = getsyms(expr.args[2])
+        guardsyms = getvars(expr.args[2])
         unapply(val, expr.args[1], union(guardsyms, syms), _eval, info)
 
 # Array/tuple matching
@@ -118,8 +118,8 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
         ### info.assignments
 
         # fix up let assignments to determine which variables to match
-        vars1 = [varsym(x) => (x,y) for (x,y) in info1.assignments]
-        vars2 = [varsym(x) => (x,y) for (x,y) in info2.assignments]
+        vars1 = [getvar(x) => (x,y) for (x,y) in info1.assignments]
+        vars2 = [getvar(x) => (x,y) for (x,y) in info2.assignments]
 
         sharedvars = intersect(keys(vars1), keys(vars2))
 
@@ -142,7 +142,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
         end
 
         for (expr, var) in info1.assignments
-            vs = varsym(x)
+            vs = getvar(x)
             if !(vs in sharedvars)
                 # here and below, we assign to nothing
                 # so the type info is removed
@@ -152,7 +152,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
         end
 
         for (expr, var) in info2.assignments
-            vs = varsym(x)
+            vs = getvar(x)
             if !(vs in sharedvars)
                 push!(info.assignments, (expr, :($g2 ? $val : nothing)))
             end
@@ -300,7 +300,7 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
 
     exprs = expr.args
 
-    if (isempty(getsyms(exprs)))
+    if (isempty(getvars(exprs)))
         # this array is all constant, so just see if it matches
         push!(info.tests, :(all($val .== $expr)))
     else
@@ -326,7 +326,7 @@ end
 
 function gen_match_expr(val, e, code)
 
-    valsyms = setdiff(getsyms(val), Set(:hcat, :row, :col))
+    valsyms = getvars(val)
 
     if isempty(valsyms)
         _eval = x->:($(eval(x)))
@@ -337,15 +337,15 @@ function gen_match_expr(val, e, code)
 # pattern => val
     if isexpr(e, :(=>))
         (pattern, value) = e.args
-        syms = getsyms(value)
+        syms = getvars(value)
         info = unapply(val, pattern, syms, _eval)
 
         # Create let statement for guards, and add it to tests
         if length(info.guards) > 0
             guard_expr = joinexprs(info.guards, :&&)
 
-            guardsyms = getsyms(guard_expr)
-            guard_assignments = filter(a->(varsym(a[1]) in guardsyms), 
+            guardsyms = getvars(guard_expr)
+            guard_assignments = filter(a->(getvar(a[1]) in guardsyms), 
                                        info.assignments)
             guard_assignment_exprs = Expr[:($expr = $val) for (expr, val) in guard_assignments]
 
