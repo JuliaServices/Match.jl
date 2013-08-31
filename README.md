@@ -450,6 +450,7 @@ There are a few useful things to be aware of when using PatternMatch.
 * If you want to see the code generated for a macro, you can use
   `PatternMatch.fmatch`, passing in quoted expressions:
 
+    ```julia
     julia> PatternMatch.fmatch(:a, :(begin
                n::Int           => "Integer"
                m::FloatingPoint => "Float"
@@ -467,5 +468,5 @@ There are a few useful things to be aware of when using PatternMatch.
             end
         end
     end
-
+    ```
 
