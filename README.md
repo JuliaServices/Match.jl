@@ -8,6 +8,14 @@ include:
 * Deep matching within data types and matrices
 * Variable binding within matches
 
+For alternatives to `PatternMatch`, check out the following modules
+
+* `PatternDispatch.jl` for a more Julia-like function dispatch on
+  patterns (https://github.com/toivoh/PatternDispatch.jl)
+* `Match.jl` which is a similar, but (at this writing) less complete
+  module for pattern matching (https://github.com/zachallaun/Match.jl)
+
+
 ## Installation
 Within Julia, do:
 ```julia
