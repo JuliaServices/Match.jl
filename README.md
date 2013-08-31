@@ -14,6 +14,8 @@ For alternatives to `PatternMatch`, check out the following modules
   patterns (https://github.com/toivoh/PatternDispatch.jl)
 * `Match.jl` which is a similar, but (at this writing) less complete
   module for pattern matching (https://github.com/zachallaun/Match.jl)
+  (Note that `Match.jl` is also not listed as an available package for
+  Julia.)
 
 
 ## Installation
