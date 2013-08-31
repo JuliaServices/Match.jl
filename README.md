@@ -475,4 +475,12 @@ There are a few useful things to be aware of when using Match.
         end
     end
     ```
+## Inspiration
+
+The following pages on pattern matching in scala provided inspiration for the library:
+
+* http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/
+* http://java.dzone.com/articles/scala-pattern-matching-case
+* http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/
+* http://docs.scala-lang.org/tutorials/tour/case-classes.html
 
