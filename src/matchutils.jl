@@ -13,7 +13,8 @@ function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
     end
     sz = size(A)
     # Force 1x..x1 slices to extract the value
-    # TODO: Note that this is no longer a reference, so there should be a better fix...
+    # TODO: Note that this is no longer a reference.
+    #       There should be a better fix...
     otherdims = [sz...]
     splice!(otherdims, d)
     if all(otherdims .== 1)
@@ -110,3 +111,7 @@ end
 
 to_array_type(sym::Symbol) = :($sym::AbstractArray)
 
+#
+# pushnt!
+#
+pushnt!(dest, value) = if value != true; push!(dest, value); end
