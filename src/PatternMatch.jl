@@ -4,7 +4,7 @@ using Base.Meta
 
 #import Base: subslicedim
 
-export @match, @fmatch, subslicedim
+export @match
 
 include("matchutils.jl")
 include("matchmacro.jl")

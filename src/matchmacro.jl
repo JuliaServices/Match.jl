@@ -409,7 +409,7 @@ macro match(v, m)
 end
 
 # Function producing/showing the generated code
-function _fmatch(v, m)
+function fmatch(v, m)
     code = :nothing
 
     if isexpr(m, :block)
@@ -421,8 +421,4 @@ function _fmatch(v, m)
     end
 
     code
-end
-
-macro fmatch(v, m)
-    _fmatch(esc(v), esc(m))
 end
