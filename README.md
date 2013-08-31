@@ -475,6 +475,8 @@ There are a few useful things to be aware of when using Match.
         end
     end
     ```
+
+
 ## Inspiration
 
 The following pages on pattern matching in scala provided inspiration for the library:
