@@ -325,14 +325,12 @@ end
 
 
 function gen_match_expr(val, e, code)
-    #_eval = identity
-    #_eval = x->quote $(eval(x)) end
 
-    # TODO: this is wrong...
-    _eval = x->:($(eval(x)))
-    try
-        val = eval(current_module(), val)
-    catch
+    valsyms = setdiff(getsyms(val), Set(:hcat, :row, :col))
+
+    if isempty(valsyms)
+        _eval = x->:($(eval(x)))
+    else
         _eval = identity
     end
 

@@ -1,4 +1,4 @@
-using Match
+using PatternMatch
 using Base.Test
 
 import Base: show
