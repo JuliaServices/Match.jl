@@ -14,9 +14,20 @@ Within Julia, do:
 Pkg.add("Match")
 ```
 
-## Examples
+## Usage
 
-The best way to see usage is probably with examples. 
+The package provides one macro, `@match`, which can be used as:
+
+    @match item begin
+        pattern1              => result1
+        pattern2, if cond end => result2
+        pattern3 || pattern4  => result3
+        _                     => default_result
+    end
+
+It is possible to supply variables inside pattern, which will be bound
+to corresponding values.  This and other features are best seen with
+examples.
 
 ### Match types
 
@@ -25,6 +36,8 @@ dispatch, and it is generally be better to use those mechanisms when
 possible.  But it can be done here.
 
 ```julia
+julia> using PatternMatch
+
 julia> matchtype(item) = @match item begin
            n::Int               => println("Integers are awesome!")
            str::String          => println("Strings are the best")
@@ -154,8 +167,6 @@ julia> function regex_test(str, a=199)
               EmailAddr                                                => "Some email address"
        
               r"MCM.*"                                                 => "In the twentieth century..."
-       
-              _                                                        => "No match"
            end
        end
 # methods for generic function regex_test
@@ -192,6 +203,10 @@ julia> regex_test("Open the pod bay doors, HAL.")
 
 `Arrays` are intrinsic to Julia.  PatternMatch allows deep matching
 against arrays.
+
+The following examples also demonstrate how PatternMatch can be used
+strictly for its extraction/binding capabilities, by only matching
+against one pattern.
 
 #### Extract first element, rest of vector
 
@@ -362,3 +377,69 @@ julia> z
  5 7
  6 8
 ```
+
+### Gotchas
+
+There are a few things to be aware of when using PatternMatch.
+
+* Guards need a comma and an `end`:
+
+    ```julia
+    ## Bad::
+    julia> _iseven(a) = @match a begin
+              n::Int if n%2 == 0 end => println("$n is even")
+              m::Int                  => println("$m is odd")
+           end
+    ERROR: syntax: extra token "if" after end of expression
+
+    julia> _iseven(a) = @match a begin
+              n::Int, if n%2 == 0 => println("$n is even")
+              m::Int              => println("$m is odd")
+           end
+    ERROR: syntax: invalid identifier name =>
+
+    ## Good::
+    julia> _iseven(a) = @match a begin
+              n::Int, if n%2 == 0 end => println("$n is even")
+              m::Int                  => println("$m is odd")
+           end
+    # methods for generic function _iseven
+    _iseven(a) at none:1
+    ```
+
+* Without a default match, the result is `nothing`:
+
+    ```julia
+    julia> test(a) = @match a begin
+               n::Int           => "Integer"
+               m::FloatingPoint => "Float"
+           end
+    # methods for generic function test
+    test(a) at none:1
+
+    julia> test("Julia is great")
+
+    julia>
+    ```
+
+* There's also a bug in the implementation, where variables are
+  sometimes not properly escaped.  For example, if `a` is bound before
+  the macro above is bound, it will be captured and used by the macro.:
+
+    ```julia
+    julia> a = 1
+    1
+
+    julia> test(a) = @match a begin
+               n::Int           => "Integer"
+               m::FloatingPoint => "Float"
+           end
+    # methods for generic function test
+    test(a) at none:1
+
+    julia> test("Julia is great")
+    "Integer"
+    ```
+  This is issue #1, and will be addressed.
+
+
