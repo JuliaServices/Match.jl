@@ -115,7 +115,7 @@ Unknown person!
 
 ### Alternatives and Guards
 
-Alternatives allow a match against one of multiple patterns.
+Alternatives allow a match against multiple patterns.
 
 Guards allow a conditional match.  They are not a standard part of
 Julia yet, so to get the parser to accept them requires that they
@@ -163,6 +163,12 @@ Julia has regular expressions already, of course.  Match builds
 on them by allowing binding, by treating patterns like functions.
 
 ```julia
+julia> Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+
+julia> EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+
 julia> function regex_test(str, a=199)
            @match str begin
               Ipv4Addr(string(a), _, octet3, _)                        => "$a._.$octet3._ address found"
