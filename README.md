@@ -10,9 +10,9 @@ include:
 
 For alternatives to `Match`, check out the following modules
 
-* [`PatternDispatch.jl`](https://github.com/toivoh/PatternDispatch.jl) for a more Julia-like function dispatch on patterns.
+* toivoh's [`PatternDispatch.jl`](https://github.com/toivoh/PatternDispatch.jl) for a more Julia-like function dispatch on patterns.
 
-* [`Match.jl`](https://github.com/zachallaun/Match.jl) which is a similar, but (at this writing) less complete module for pattern matching.
+* Zach Allaun's [`Match.jl`](https://github.com/zachallaun/Match.jl) which is a similar, but (at this writing) less complete module for pattern matching.
 
   Note that `Match.jl` is also not listed as an available package for Julia.
 
