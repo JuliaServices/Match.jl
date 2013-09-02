@@ -7,13 +7,14 @@
 #
 # "sub" version of slicedim, to get an array slice as a view
 
-function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
+function subslicedim{T<:AbstractArray}(A::T, d::Integer, i::Integer)
     if d < 1 || d > ndims(A)
         throw(BoundsError()) 
     end
     sz = size(A)
     # Force 1x..x1 slices to extract the value
-    # TODO: Note that this is no longer a reference, so there should be a better fix...
+    # TODO: Note that this is no longer a reference.
+    #       There should be a better fix...
     otherdims = [sz...]
     splice!(otherdims, d)
     if all(otherdims .== 1)
@@ -23,26 +24,44 @@ function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
     end
 end
 
-subslicedim{T<:AbstractVector}(A::T, d::Integer, i) = 
+function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
+    if d < 1 || d > ndims(A)
+        throw(BoundsError())
+    end
+    sz = size(A)
+    sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+end
+
+subslicedim{T<:AbstractVector}(A::T, d::Integer, i::Integer) =
     (if d < 0 || d > 1;  throw(BoundsError()) end;  A[i])
 
+subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
+    (if d < 0 || d > 1;  throw(BoundsError()) end;  sub(A, i))
+
 #
-# getsyms
+# getvars
 #
 # get all symbols in an expression (including undefined symbols)
 
-getsyms(e)                 = Set{Symbol}()
-getsyms(e ::Symbol)        = Set{Symbol}(e)
-getsyms(e ::Expr)          = union(Set{Symbol}(e.head), getsyms(e.args))
-getsyms(es::AbstractArray) = union([getsyms(e) for e in es]...)
+getvars(e)                 = Symbol[] #Set{Symbol}()
+getvars(e ::Symbol)        = Symbol[e] #Set{Symbol}(e)
+getvars(e ::Expr)          = if !isexpr(e, :call) || !istypecall(e); getvars(e.args); else Symbol[]; end
+getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 #
-# varsym
+# getvar
 #
 # get the symbol from a :(::) expression
 
-varsym(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
-varsym(x::Symbol) = x
+getvar(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
+getvar(x::Symbol) = x
+
+#
+# arg1istype
+#
+# checks if expr.arg[1] is a Type
+
+arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 
 
 #
@@ -110,3 +129,7 @@ end
 
 to_array_type(sym::Symbol) = :($sym::AbstractArray)
 
+#
+# pushnt!
+#
+pushnt!(dest, value) = if value != true; push!(dest, value); end
