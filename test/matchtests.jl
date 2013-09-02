@@ -4,7 +4,7 @@ using Base.Test
 import Base: show
 
 # Type matching
-test1(item) = @match item begin
+test1(item) = @switch item begin
     n::Int               => "Integers are awesome!"
     str::String          => "Strings are the best"
     m::Dict{Int, String} => "Ints for Strings?"
@@ -36,7 +36,7 @@ type Person
     address::Address
 end
 
-test2(person) = @match person begin
+test2(person) = @switch person begin
     Person("Julia", lastname,  _) => "Found Julia $lastname"
     Person(firstname, "Julia", _) => "$firstname Julia was here!"
     Person(firstname, lastname ,Address(_, "Cambridge", zip)) => "$firstname $lastname lives in zip $zip"
@@ -79,7 +79,7 @@ end
 
 # Not really the Julian way
 function show(io::IO, term::Term)
-    @match term begin
+    @switch term begin
        Var(n)    => print(io, n)
        Fun(x, b) => begin
                         print(io, "^$x.")
@@ -97,7 +97,7 @@ end
 
 # Guard test is here
 function is_identity_fun(term::Term)
-   @match term begin
+   @switch term begin
      Fun(x, Var(y)), if x == y end => true
      _ => false
    end
@@ -118,13 +118,13 @@ end
 
 # Test single terms
 
-myisodd(x::Int) = @match(x, i => i%2==1)
+myisodd(x::Int) = @switch(x, i => i%2==1)
 @assert filter(myisodd, 1:10) == filter(isodd, 1:10) == [1,3,5,7,9]
 
 # Alternatives, Guards
 
 function parse_arg(arg::String, value::Any=nothing)
-   @match (arg, value) begin
+   @switch (arg, value) begin
       ("-l",              lang),   if lang != nothing end => "Language set to $lang"
       ("-o" || "--optim", n::Int),      if 0 < n <= 5 end => "Optimization level set to $n"
       ("-o" || "--optim", n::Int)                         => "Illegal optimization level $(n)!"
@@ -149,7 +149,7 @@ Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
 EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
 function regex_test(str, a=199)
-    @match str begin
+    @switch str begin
        Ipv4Addr(string(a), _, octet3, _)                        => "$a._.$octet3._ address found"
        Ipv4Addr(_, _, octet3, _),       if int(octet3) > 30 end => "IPv4 address with octet 3 > 30"
        Ipv4Addr()                                               => "IPv4 address"
@@ -182,7 +182,7 @@ end
 @assert @match([1:4], [a,b...])                      == (1, [2,3,4])
 
 # match particular values at the beginning of a vector
-@assert @match([1:10], [1,2,a...])                   == [3:10]
+@assert @match([1:10], [1,2,a...])                   == ([3:10],)
 
 # match / collect columns
 @assert @match([1 2 3; 4 5 6], [a b...])             == ([1,4] , [2 3; 5 6])
@@ -192,8 +192,9 @@ end
 # match / collect rows
 @assert @match([1 2 3; 4 5 6], [a, b])               == ([1 2 3], [4 5 6])
 @assert @match([1 2 3; 4 5 6; 7 8 9], [a, b...])     == ([1 2 3], [4 5 6; 7 8 9])
-@assert @match([1 2 3; 4 5 6], [[1 2 3], a])         ==  [4 5 6]
-@assert @match([1 2 3; 4 5 6], [1 2 3; a])           ==  [4 5 6]d @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...]) ==  [4 5 6; 7 8 9]
+@assert @match([1 2 3; 4 5 6], [[1 2 3], a])         == ([4 5 6],)
+@assert @match([1 2 3; 4 5 6], [1 2 3; a])           == ([4 5 6],)
+@assert @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...]) == ([4 5 6; 7 8 9],)
 
 # match invidual positions
 @assert @match([1 2; 3 4], [1 a; b c])               == (2,3,4)

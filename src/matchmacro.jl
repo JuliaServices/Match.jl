@@ -393,9 +393,9 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
     end
 end        
 
-# The macro!
-macro match(v, m)
-    code = :nothing
+# The switch macro
+macro switch(v, m)
+    code = :nothing  # non-match value
 
     if isexpr(m, :block)
         for e in reverse(m.args)
@@ -409,8 +409,8 @@ macro match(v, m)
 end
 
 # Function producing/showing the generated code
-function fmatch(v, m)
-    code = :nothing
+function fswitch(v, m)
+    code = :nothing  # non-match value
 
     if isexpr(m, :block)
         for e in reverse(m.args)
@@ -420,5 +420,32 @@ function fmatch(v, m)
         code = gen_match_expr(v, m, code)
     end
 
+    code
+end
+
+# The match macro
+macro match(val, m)
+    vars = setdiff(getvars(m), [:_])
+    code = :(error("Pattern does not match!"))
+    code = gen_match_expr(val, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
+    esc(code)
+end
+
+function fmatch(val, m)
+    vars = setdiff(getvars(m), [:_])
+    code = :(error("Pattern does not match!"))
+    code = gen_match_expr(val, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
+    code
+end
+
+# The ismatch macro
+macro ismatch(val, m)
+    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
+    esc(code)
+end
+
+
+function fismatch(val, m)
+    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
     code
 end
