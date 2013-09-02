@@ -383,10 +383,12 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
         e
     else
         vars = setdiff(getvars(e), [:_])
-        if length(vars) > 0
-            gen_match_expr(val, Expr(:(=>), e, Expr(:tuple, vars...)), code, false)
-        else
+        if length(vars) == 0
             gen_match_expr(val, Expr(:(=>), e, :true), code, false)
+        elseif length(vars) == 1
+            gen_match_expr(val, Expr(:(=>), e, vars[1]), code, false)
+        else
+            gen_match_expr(val, Expr(:(=>), e, Expr(:tuple, vars...)), code, false)
         end
     end
 end        

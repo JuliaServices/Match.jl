@@ -45,7 +45,7 @@ subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
 
 getvars(e)                 = Symbol[] #Set{Symbol}()
 getvars(e ::Symbol)        = Symbol[e] #Set{Symbol}(e)
-getvars(e ::Expr)          = if !isexpr(e, :call) || !istypecall(e); getvars(e.args); else Symbol[]; end
+getvars(e ::Expr)          = if !isexpr(e, :call) || !arg1isa(e, Type); getvars(e.args); else Symbol[]; end
 getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 #
