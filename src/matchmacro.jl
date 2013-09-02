@@ -40,7 +40,7 @@ function unapply(val, sym::Symbol, syms, _eval::Function, info::MatchExprInfo=Ma
         push!(info.assignments, (sym, val))
 
 # Constants
-    elseif isconst(sym)
+    elseif isconst(sym) && !isa(eval(sym), Function)
         push!(info.tests, :($val == $sym))
 
     end
@@ -76,7 +76,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
         typ = expr.args[2]
         sym = expr.args[1]
 
-        if isconst(sym)
+        if isconst(sym) && !isa(eval(sym), Function)
             push!(info.tests, :($val == $expr))
         else
             pushnt!(info.tests, _eval(:(isa($val, $typ))))
@@ -364,13 +364,16 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
             expr
         else
             tests = joinexprs(info.tests, :&&)
-
             # Returned Expression
-            expr = :(if $tests
-                         $expr
-                     else
-                         $code
-                     end)
+            if expr == :true && code == :false
+                expr = tests
+            else
+                expr = :(if $tests
+                             $expr
+                         else
+                             $code
+                         end)
+            end
 
             localsyms = [:($x::Bool = false) for x in info.localsyms]
 
