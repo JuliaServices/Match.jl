@@ -220,12 +220,12 @@ against one pattern.
 #### Extract first element, rest of vector
 
 ```julia
-julia> (x,y) = @match([1:4], [a,b...] => (a,b));
+julia> @match([1:4], [a,b...]);
 
-julia> x
+julia> a
 1
 
-julia> y
+julia> b
 3-element Array{Int64,1}:
  2
  3
@@ -235,49 +235,53 @@ julia> y
 #### Match values at the beginning of a vector
 
 ```julia
-julia> @match([1:10], [1,2,a...] => a);
+julia> @match([1:5], [1,2,a...])
+3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
+ 3
+ 4
+ 5
 ```
 
 #### Match and collect columns
 
 ```julia
-julia> (x,y) = @match([1 2 3; 4 5 6], [a b...] => (a,b));
+julia> @match([1 2 3; 4 5 6], [a b...]);
 
-julia> x
+julia> a
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  1
  4
 
-julia> y
+julia> b
 2x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  2 3
  5 6
 
-julia> (x,y,z) = @match([1 2 3; 4 5 6], [a b c] => (a,b,c));
+julia> @match([1 2 3; 4 5 6], [a b c]);
 
-julia> x
+julia> a
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  1
  4
 
-julia> y
+julia> b
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  2
  5
 
-julia> z
+julia> c
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  3
  6
 
-julia> (x,y) = @match([1 2 3; 4 5 6], [[1,4] a b] => (a,b));
+julia> @match([1 2 3; 4 5 6], [[1,4] a b]);
 
-julia> x
+julia> a
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  2
  5
 
-julia> y
+julia> b
 2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
  3
  6
@@ -286,36 +290,36 @@ julia> y
 #### Match and collect rows
 
 ```julia
-julia> (x,y) = @match([1 2 3; 4 5 6], [a, b] => (a,b));
+julia> @match([1 2 3; 4 5 6], [a, b]);
 
-julia> x
+julia> a
 1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  1 2 3
 
-julia> y
+julia> b
 1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  4 5 6
 
-julia> (x,y) = @match([1 2 3; 4 5 6; 7 8 9], [a, b...] => (a,b));
+julia> @match([1 2 3; 4 5 6; 7 8 9], [a, b...]);
 
-julia> x
+julia> a
 1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  1 2 3
 
-julia> y
+julia> b
 2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  4 5 6
  7 8 9
 
-julia> @match([1 2 3; 4 5 6], [[1 2 3], a]         =>  a)
+julia> @match([1 2 3; 4 5 6], [[1 2 3], a])
 1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  4  5  6
 
-julia> @match([1 2 3; 4 5 6], [1 2 3; a]           =>  a)
+julia> @match([1 2 3; 4 5 6], [1 2 3; a])
 1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  4  5  6
 
-julia> @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...] =>  a)
+julia> @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])
 2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  4  5  6
  7  8  9
@@ -324,23 +328,23 @@ julia> @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...] =>  a)
 #### Match invidual positions
 
 ```julia
-julia> (x,y,z) = @match([1 2; 3 4], [1 a; b c] => (a,b,c));
+julia> @match([1 2; 3 4], [1 a; b c]);
 
-julia> x
+julia> a
 2
 
-julia> y
+julia> b
 3
 
-julia> z
+julia> c
 4
 
-julia> (x,y) = @match([1 2; 3 4], [1 a; b...] => (a,b));
+julia> @match([1 2; 3 4], [1 a; b...]);
 
-julia> x
+julia> a
 2
 
-julia> y
+julia> b
 1x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
  3 4
 ```
@@ -348,7 +352,7 @@ julia> y
 #### Match 3D arrays
 
 ```julia
-julia> a = reshape([1:8], (2,2,2))
+julia> m = reshape([1:8], (2,2,2))
 2x2x2 Array{Int64,3}:
 [:, :, 1] =
  1 3
@@ -358,30 +362,30 @@ julia> a = reshape([1:8], (2,2,2))
  5 7
  6 8
 
-julia> (x,y) = @match(a, [b c] => (b,c));
+julia> @match(m, [a b]);
 
-julia> x
+julia> a
 2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
  1 3
  2 4
 
-julia> y
+julia> b
 2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
  5 7
  6 8
 
-julia> (w,x,y,z) = @match(a, [[1 c; b d] e] => (b,c,d,e));
+julia> @match(m, [[1 a; b c] d]);
 
-julia> w
-2
-
-julia> x
+julia> a
 3
 
-julia> y
+julia> b
+2
+
+julia> c
 4
 
-julia> z
+julia> d
 2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
  5 7
  6 8
@@ -452,6 +456,9 @@ There are a few useful things to be aware of when using Match.
 
   Note that variables not referenced in the result expression will not
   be bound (e.g., ``n`` is never bound above).
+
+  One small exception to this rule is that when "=>" is not
+  used, "_" will not be assigned.
 
 * If you want to see the code generated for a macro, you can use
   `Match.fmatch`, passing in quoted expressions:
