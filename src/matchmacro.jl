@@ -170,7 +170,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
     elseif isexpr(expr, :call)
 
     # Match Type constructors
-        if isa(eval(current_module(), expr.args[1]), Type)
+        if arg1isa(expr, Type) # isa(eval(current_module(), expr.args[1]), Type)
             typ = eval(current_module(), expr.args[1])
             parms = expr.args[2:end]
             fields = names(typ)
@@ -189,7 +189,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
             unapply(dotvars, parms, syms, _eval, info)
 
     # Match Regex "calls"
-        elseif isa(eval(current_module(), expr.args[1]), Regex)
+        elseif arg1isa(expr, Regex)
             m = gensym("m")
             re = expr.args[1]
             parms = expr.args[2:end]
@@ -313,7 +313,7 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
 end
 
 
-function gen_match_expr(val, e, code)
+function gen_match_expr(val, e, code, use_let::Bool=true)
 
     valsyms = getvars(val)
 
@@ -349,10 +349,14 @@ function gen_match_expr(val, e, code)
                                     isexpr(sym, :(::)) && sym.args[1] in syms),
                              info.assignments)
 
-        let_assignments = Expr[:($expr = $val) for (expr, val) in assignments]
-
-        # Wrap value statement in let
-        expr = let_expr(value, let_assignments)
+        if use_let
+            # Wrap value statement in let
+            let_assignments = Expr[:($expr = $val) for (expr, val) in assignments]
+            expr = let_expr(value, let_assignments)
+        else
+            esc_assignments = Expr[Expr(:(=), getvar(expr), _eval(val)) for (expr, val) in assignments]
+            expr = Expr(:block, esc_assignments..., value)
+        end
 
         # Wrap expr in test expressions
         if length(info.tests) == 0
@@ -378,7 +382,12 @@ function gen_match_expr(val, e, code)
     elseif isa(e, Bool)
         e
     else
-        error("Match expressions must be of the form `pattern => value`, got:\n$e")
+        vars = setdiff(getvars(e), [:_])
+        if length(vars) > 0
+            gen_match_expr(val, Expr(:(=>), e, Expr(:tuple, vars...)), code, false)
+        else
+            gen_match_expr(val, Expr(:(=>), e, :true), code, false)
+        end
     end
 end        
 

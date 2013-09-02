@@ -7,7 +7,7 @@
 #
 # "sub" version of slicedim, to get an array slice as a view
 
-function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
+function subslicedim{T<:AbstractArray}(A::T, d::Integer, i::Integer)
     if d < 1 || d > ndims(A)
         throw(BoundsError()) 
     end
@@ -24,17 +24,28 @@ function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
     end
 end
 
-subslicedim{T<:AbstractVector}(A::T, d::Integer, i) = 
+function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
+    if d < 1 || d > ndims(A)
+        throw(BoundsError())
+    end
+    sz = size(A)
+    sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+end
+
+subslicedim{T<:AbstractVector}(A::T, d::Integer, i::Integer) =
     (if d < 0 || d > 1;  throw(BoundsError()) end;  A[i])
+
+subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
+    (if d < 0 || d > 1;  throw(BoundsError()) end;  sub(A, i))
 
 #
 # getvars
 #
 # get all symbols in an expression (including undefined symbols)
 
-getvars(e)                 = Set{Symbol}()
-getvars(e ::Symbol)        = Set{Symbol}(e)
-getvars(e ::Expr)          = getvars(e.args)
+getvars(e)                 = Symbol[] #Set{Symbol}()
+getvars(e ::Symbol)        = Symbol[e] #Set{Symbol}(e)
+getvars(e ::Expr)          = if !isexpr(e, :call) || !istypecall(e); getvars(e.args); else Symbol[]; end
 getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 #
@@ -44,6 +55,13 @@ getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 getvar(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
 getvar(x::Symbol) = x
+
+#
+# arg1istype
+#
+# checks if expr.arg[1] is a Type
+
+arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 
 
 #
