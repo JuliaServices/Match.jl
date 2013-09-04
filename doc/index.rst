@@ -103,11 +103,11 @@ bind variables to components of those types::
   end
 
   personinfo(person) = @match person begin
-      Person("Julia", lname,  _)	   => "Found Julia $lname"
-      Person(fname, "Julia", _)            => "$fname Julia was here!"
-      Person(fname, lname,
-             Address(_, "Cambridge", zip)) => "$fname $lname lives in zip $zip"
-      Person(_...)                         => "Unknown person!"
+    Person("Julia", lname,  _)           => "Found Julia $lname"
+    Person(fname, "Julia", _)            => "$fname Julia was here!"
+    Person(fname, lname,
+           Address(_, "Cambridge", zip)) => "$fname $lname lives in zip $zip"
+    Person(_...)                         => "Unknown person!"
   end
 
   julia> personinfo(Person("Julia", "Robinson", 
@@ -136,16 +136,16 @@ Guards allow a conditional match.  They are not a standard part of
 Julia yet, so to get the parser to accept them requires that they
 are preceded by a comma and end with "end"::
 
-  julia> function parse_arg(arg::String, value::Any=nothing)
-            @match (arg, value) begin
-                ("-l",              lang)    => println("Language set to $lang")
-		("-o" || "--optim", n::Int),
-                 if 0 < n <= 5 end           => println("Optimization level set to $n")
-		("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
-		("-h" || "--help",  nothing) => println("Help!")
-		bad                          => println("Unknown argument: $bad")
-	    end
-	 end
+  function parse_arg(arg::String, value::Any=nothing)
+    @match (arg, value) begin
+      ("-l",              lang)    => println("Language set to $lang")
+      ("-o" || "--optim", n::Int),
+       if 0 < n <= 5 end           => println("Optimization level set to $n")
+      ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
+      ("-h" || "--help",  nothing) => println("Help!")
+      bad                          => println("Unknown argument: $bad")
+    end
+  end
 
   julia> parse_arg("-l", "eng")
   Language set to eng
@@ -183,18 +183,18 @@ on them by allowing binding, by treating patterns like functions::
   EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
   function regex_test(str, a=199)
-      @match str begin
-          Ipv4Addr(string(a), _, octet3, _)       => "$a._.$octet3._ address found"
-          Ipv4Addr(_, _, octet3, _),       
-              if int(octet3) > 30 end             => "IPv4 address with octet 3 > 30"
-	  Ipv4Addr()                              => "IPv4 address"
+    @match str begin
+      Ipv4Addr(string(a), _, octet3, _)       => "$a._.$octet3._ address found"
+      Ipv4Addr(_, _, octet3, _),       
+          if int(octet3) > 30 end             => "IPv4 address with octet 3 > 30"
+      Ipv4Addr()                              => "IPv4 address"
        
-	  EmailAddr(_,domain), 
-              if endswith(domain, "ucla.edu") end => "UCLA email address"
-	  EmailAddr                               => "Some email address"
+      EmailAddr(_,domain), 
+          if endswith(domain, "ucla.edu") end => "UCLA email address"
+      EmailAddr                               => "Some email address"
        
-	  r"MCM.*"                                => "In the twentieth century..."
-      end
+      r"MCM.*"                                => "In the twentieth century..."
+    end
   end
 
   julia> regex_test("199.27.77.133")
