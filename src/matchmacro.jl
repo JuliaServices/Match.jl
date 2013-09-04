@@ -285,8 +285,14 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         error("unapply_array() called on a non-array expression")
     end
 
-    pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
-    pushnt!(info.tests, _eval(check_dim_size_expr(val, dim, expr)))
+    if !(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
+        # if we recursively called this with subslicedim (below), 
+        # don't do these checks
+        # TODO: if there are nested arrays in the match, these checks
+        #       should actually be done!
+        pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
+        pushnt!(info.tests, _eval(check_dim_size_expr(val, dim, expr)))
+    end
 
     exprs = expr.args
 
@@ -386,18 +392,11 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
     elseif isa(e, Bool)
         e
     else
-        vars = setdiff(getvars(e), [:_])
-        if length(vars) == 0
-            gen_match_expr(val, Expr(:(=>), e, :true), code, false)
-        elseif length(vars) == 1
-            gen_match_expr(val, Expr(:(=>), e, vars[1]), code, false)
-        else
-            gen_match_expr(val, Expr(:(=>), e, Expr(:tuple, vars...)), code, false)
-        end
+        error("@match patterns must consist of :(=>) blocks")
     end
 end        
 
-# The macro!
+# The match macro
 macro match(v, m)
     code = :nothing
 
@@ -405,8 +404,18 @@ macro match(v, m)
         for e in reverse(m.args)
             code = gen_match_expr(v, e, code)
         end
-    else
+    elseif isexpr(m, :(=>))
         code = gen_match_expr(v, m, code)
+    else
+        code = :(error("Pattern does not match"))
+        vars = setdiff(getvars(m), [:_])
+        if length(vars) == 0
+            code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
+        elseif length(vars) == 1
+            code = gen_match_expr(v, Expr(:(=>), m, vars[1]), code, false)
+        else
+            code = gen_match_expr(v, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
+        end
     end
 
     esc(code)
@@ -420,9 +429,32 @@ function fmatch(v, m)
         for e in reverse(m.args)
             code = gen_match_expr(v, e, code)
         end
-    else
+    elseif isexpr(m, :(=>))
         code = gen_match_expr(v, m, code)
+    else
+        code = :(error("Pattern does not match"))
+        vars = setdiff(getvars(m), [:_])
+        if length(vars) == 0
+            code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
+        elseif length(vars) == 1
+            code = gen_match_expr(v, Expr(:(=>), m, vars[1]), code, false)
+        else
+            code = gen_match_expr(v, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
+        end
     end
 
     code
 end
+
+# The ismatch macro
+macro ismatch(val, m)
+    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
+    esc(code)
+end
+
+
+function fismatch(val, m)
+    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
+    code
+end
+

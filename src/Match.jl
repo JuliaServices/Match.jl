@@ -2,7 +2,7 @@ module Match
 
 using Base.Meta
 
-export @match
+export @match, @ismatch
 
 include("matchutils.jl")
 include("matchmacro.jl")
