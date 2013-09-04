@@ -90,36 +90,41 @@ Deep Matching of Composite Types
 One nice feature is the ability to match embedded types, as well as
 bind variables to components of those types::
 
-  julia> type Address
-             street::String
-             city::String
-             zip::String
-         end
+  type Address
+      street::String
+      city::String
+      zip::String
+  end
 
-  julia> type Person
-             firstname::String
-             lastname::String
-             address::Address
-         end
+  type Person
+      firstname::String
+      lastname::String
+      address::Address
+  end
 
-  julia> personinfo(person) = @match person begin
-             Person("Julia", lastname,  _)                             => println("Found Julia $lastname")
-             Person(firstname, "Julia", _)                             => println("$firstname Julia was here!")
-             Person(firstname, lastname ,Address(_, "Cambridge", zip)) => println("$firstname $lastname lives in zip $zip")
-             Person(_...)                                              => println("Unknown person!")
-         end
+  personinfo(person) = @match person begin
+      Person("Julia", lname,  _)	   => "Found Julia $lname"
+      Person(fname, "Julia", _)            => "$fname Julia was here!"
+      Person(fname, lname,
+             Address(_, "Cambridge", zip)) => "$fname $lname lives in zip $zip"
+      Person(_...)                         => "Unknown person!"
+  end
 
-  julia> personinfo(Person("Julia", "Robinson", Address("450 Serra Mall", "Stanford", "94305")))
-  Found Julia Robinson
+  julia> personinfo(Person("Julia", "Robinson", 
+                    Address("450 Serra Mall", "Stanford", "94305")))
+  "Found Julia Robinson"
 
-  julia> personinfo(Person("Gaston", "Julia",   Address("1 rue Victor Cousin", "Paris", "75005")))
-  Gaston Julia was here!
+  julia> personinfo(Person("Gaston", "Julia",
+                    Address("1 rue Victor Cousin", "Paris", "75005")))
+  "Gaston Julia was here!"
 
-  julia> personinfo(Person("Edwin", "Aldrin",   Address("350 Memorial Dr", "Cambridge", "02139")))
-  Edwin Aldrin lives in zip 02139
+  julia> personinfo(Person("Edwin", "Aldrin",   
+                    Address("350 Memorial Dr", "Cambridge", "02139")))
+  "Edwin Aldrin lives in zip 02139"
 
-  julia> personinfo(Person("Linus", "Pauling",  Address("1200 E California Blvd", "Pasadena", "91125")))
-  Unknown person!
+  julia> personinfo(Person("Linus", "Pauling",  
+                    Address("1200 E California Blvd", "Pasadena", "91125")))
+  "Unknown person!"
 
 
 Alternatives and Guards
@@ -133,11 +138,12 @@ are preceded by a comma and end with "end"::
 
   julia> function parse_arg(arg::String, value::Any=nothing)
             @match (arg, value) begin
-                ("-l",              lang),   if lang != nothing end => println("Language set to $lang")
-		("-o" || "--optim", n::Int),      if 0 < n <= 5 end => println("Optimization level set to $n")
-		("-o" || "--optim", n::Int)                         => println("Illegal optimization level $(n)!")
-		("-h" || "--help",  nothing)                        => println("Help!")
-		bad                                                 => println("Unknown argument: $bad")
+                ("-l",              lang)    => println("Language set to $lang")
+		("-o" || "--optim", n::Int),
+                 if 0 < n <= 5 end           => println("Optimization level set to $n")
+		("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
+		("-h" || "--help",  nothing) => println("Help!")
+		bad                          => println("Unknown argument: $bad")
 	    end
 	 end
 
@@ -172,24 +178,24 @@ Regular Expressions
 Julia has regular expressions already, of course.  Match builds
 on them by allowing binding, by treating patterns like functions::
 
-  julia> Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
-  r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+  Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
 
-  julia> EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
-  r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+  EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
-  julia> function regex_test(str, a=199)
-             @match str begin
-                Ipv4Addr(string(a), _, octet3, _)                        => "$a._.$octet3._ address found"
-		Ipv4Addr(_, _, octet3, _),       if int(octet3) > 30 end => "IPv4 address with octet 3 > 30"
-		Ipv4Addr()                                               => "IPv4 address"
+  function regex_test(str, a=199)
+      @match str begin
+          Ipv4Addr(string(a), _, octet3, _)       => "$a._.$octet3._ address found"
+          Ipv4Addr(_, _, octet3, _),       
+              if int(octet3) > 30 end             => "IPv4 address with octet 3 > 30"
+	  Ipv4Addr()                              => "IPv4 address"
        
-		EmailAddr(_,domain), if endswith(domain, "ucla.edu") end => "UCLA email address"
-		EmailAddr                                                => "Some email address"
+	  EmailAddr(_,domain), 
+              if endswith(domain, "ucla.edu") end => "UCLA email address"
+	  EmailAddr                               => "Some email address"
        
-		r"MCM.*"                                                 => "In the twentieth century..."
-             end
-	 end
+	  r"MCM.*"                                => "In the twentieth century..."
+      end
+  end
 
   julia> regex_test("199.27.77.133")
   "199._.77._ address found"
@@ -230,6 +236,7 @@ Extract first element, rest of vector
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
+
   julia
   julia> @match([1:4], [a,b...]);
 
@@ -247,6 +254,7 @@ Match values at the beginning of a vector
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
+
   julia> @match([1:5], [1,2,a...])
    3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
     3
@@ -258,6 +266,7 @@ Match and collect columns
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
+
   julia> @match([1 2 3; 4 5 6], [a b...]);
 
   julia> a
@@ -305,6 +314,7 @@ Match and collect rows
 ~~~~~~~~~~~~~~~~~~~~~~
 
 ::
+
   julia> @match([1 2 3; 4 5 6], [a, b]);
 
   julia> a
@@ -344,6 +354,7 @@ Match invidual positions
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
+
   julia> @match([1 2; 3 4], [1 a; b c]);
 
   julia> a
@@ -369,6 +380,7 @@ Match 3D arrays
 ~~~~~~~~~~~~~~~
 
 ::
+
   julia> m = reshape([1:8], (2,2,2))
   2x2x2 Array{Int64,3}:
   [:, :, 1] =
