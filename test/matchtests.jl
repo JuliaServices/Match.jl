@@ -193,7 +193,8 @@ end
 @assert @match([1 2 3; 4 5 6], [a, b])               == ([1 2 3], [4 5 6])
 @assert @match([1 2 3; 4 5 6; 7 8 9], [a, b...])     == ([1 2 3], [4 5 6; 7 8 9])
 @assert @match([1 2 3; 4 5 6], [[1 2 3], a])         ==  [4 5 6]
-@assert @match([1 2 3; 4 5 6], [1 2 3; a])           ==  [4 5 6]d @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...]) ==  [4 5 6; 7 8 9]
+@assert @match([1 2 3; 4 5 6], [1 2 3; a])           ==  [4 5 6]
+@assert @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...]) ==  [4 5 6; 7 8 9]
 
 # match invidual positions
 @assert @match([1 2; 3 4], [1 a; b c])               == (2,3,4)
