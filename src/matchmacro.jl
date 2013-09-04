@@ -282,7 +282,7 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
     elseif isexpr(expr, :hcat)
         dim = 2
     else
-        return unapply(val, expr, syms, _eval, info)
+        error("unapply_array() called on a non-array expression")
     end
 
     pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
