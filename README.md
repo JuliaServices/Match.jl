@@ -14,7 +14,7 @@ For alternatives to `Match`, check out the following modules
 
 * Zach Allaun's [`Match.jl`](https://github.com/zachallaun/Match.jl) which is a similar, but (at this writing) less complete module for pattern matching.
 
-  Note that `Match.jl` is also not listed as an available package for Julia.
+  Note that Zach's `Match.jl` is also not listed as an available package for Julia.  (Zach kindly offered to let this package use the same name--thanks!)
 
 
 ## Installation
