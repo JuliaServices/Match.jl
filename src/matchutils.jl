@@ -70,7 +70,7 @@ arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 # generate an expression to check the size of a variable dimension against an array of expressions
 
 function check_dim_size_expr(val, dim::Integer, ex::Expr)
-    if length(ex.args) == 0 || !isexpr(ex.args[end], :(...))
+    if length(ex.args) == 0 || !any([isexpr(ex.args[i], :(...)) for i=1:length(ex.args)])
         :($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
     else
         :($dim <= ndims($val) && size($val, $dim) >= $(length(ex.args)-1))

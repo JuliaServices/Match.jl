@@ -2,10 +2,10 @@
 ### Match Expression Info
 
 immutable MatchExprInfo
-    tests       ::Vector
-    assignments ::Vector
-    guards      ::Vector{Expr}
-    localsyms   ::Vector{Symbol}
+    tests        ::Vector
+    assignments  ::Vector
+    guards       ::Vector{Expr}
+    localsyms    ::Vector{Symbol}
 end
 
 MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Symbol[])
@@ -27,7 +27,8 @@ MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Symbol[])
 ## * More complex expressions are handled specially
 ##   (e.g., a || b allows matching against a or b)
 
-function unapply(val, sym::Symbol, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply(val, sym::Symbol, syms, _eval::Function, 
+                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
 
 # Symbol defined as a Regex (other Regex cases are handled below)
     if isdefined(current_module(),sym) && 
@@ -48,14 +49,15 @@ function unapply(val, sym::Symbol, syms, _eval::Function, info::MatchExprInfo=Ma
     info
 end
 
-function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply(val, expr::Expr, syms, _eval::Function, 
+                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
 
 # Extract guards
     if length(expr.args) == 2 && isexpr(expr.args[2], :if)
 
         push!(info.guards, expr.args[2].args[1])
         guardsyms = getvars(expr.args[2])
-        unapply(val, expr.args[1], union(guardsyms, syms), _eval, info)
+        unapply(val, expr.args[1], union(guardsyms, syms), _eval, info, array_checked)
 
 # Array/tuple matching
     elseif isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat)
@@ -69,7 +71,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
         pushnt!(info.tests, _eval(:(isa($val, Tuple))))
         pushnt!(info.tests, _eval(check_tuple_len_expr(val, expr)))
 
-        unapply(val, expr.args, syms, _eval, info)
+        unapply(val, expr.args, syms, _eval, info, array_checked)
 
 # Match x::Type
     elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol) # && isa(eval(current_module(), expr.args[2]), Type)
@@ -89,8 +91,8 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
 
 # Match a || b (i.e., match either expression)
     elseif isexpr(expr, :(||))
-        info1 = unapply(val, expr.args[1], syms, _eval)
-        info2 = unapply(val, expr.args[2], syms, _eval)
+        info1 = unapply(val, expr.args[1], syms, _eval, array_checked)
+        info2 = unapply(val, expr.args[2], syms, _eval, array_checked)
 
         ### info.localsyms
         
@@ -186,7 +188,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
             pushnt!(info.tests, _eval(:(isa($val, $typ))))
             dotvars = Expr[:($val.($(Expr(:quote, var)))) for var in fields]
 
-            unapply(dotvars, parms, syms, _eval, info)
+            unapply(dotvars, parms, syms, _eval, info, array_checked)
 
     # Match Regex "calls"
         elseif arg1isa(expr, Regex)
@@ -198,7 +200,7 @@ function unapply(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=Mat
             # TODO: test number of captures against length of parms?
 
             if length(parms) > 0
-                unapply(:($m.captures), parms, syms, _eval, info)
+                unapply(:($m.captures), parms, syms, _eval, info, array_checked)
             else
                 info
             end
@@ -224,7 +226,8 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Function, 
+                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
     # end
@@ -235,9 +238,9 @@ function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Fu
                 error("elipses (...) are only allowed in the last position of an Array/Tuple pattern match.")
             end
             sym = to_array_type(exprs[end].args[1])
-            unapply(_eval(:($val[$i:end])), sym, syms, _eval, info)
+            unapply(_eval(:($val[$i:end])), sym, syms, _eval, info, array_checked)
         else
-            unapply(_eval(:($val[$i])), exprs[i], syms, _eval, info)
+            unapply(_eval(:($val[$i])), exprs[i], syms, _eval, info, array_checked)
         end
     end
 
@@ -247,27 +250,31 @@ end
 
 # Match arrays against arrays
 
-function unapply(vs::AbstractArray, es::AbstractArray, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply(vs::AbstractArray, es::AbstractArray, syms, _eval::Function, 
+                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
     if length(es) == 1 && isexpr(es[1], :(...))
         sym = to_array_type(es[1].args[1])
-        unapply([vs...], sym, syms, _eval, info)
+        unapply([vs...], sym, syms, _eval, info, array_checked)
 
     elseif length(es) == length(vs) == 1
-        unapply(vs[1], es[1], syms, _eval, info)
+        unapply(vs[1], es[1], syms, _eval, info, array_checked)
 
     elseif length(es) == length(vs) == 0
         info
 
     else
-        unapply(vs[1], es[1], syms, _eval, info)
-        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, _eval, info)
+        unapply(vs[1], es[1], syms, _eval, info, array_checked)
+        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, _eval, info, array_checked)
     end
 end
 
-unapply(vals::Tuple, exprs::Tuple, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo()) = unapply([vals...], [exprs...], syms, _eval, info)
+unapply(vals::Tuple, exprs::Tuple, syms, _eval::Function, 
+        info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false) = 
+    unapply([vals...], [exprs...], syms, _eval, info, array_checked)
 
 # fallback
-function unapply(val, expr, _, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply(val, expr, _, _eval::Function, 
+                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
     push!(info.tests, :($val == $expr))
     info
 end
@@ -275,7 +282,7 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing arrays
 
-function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo())
+function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
 
     if isexpr(expr, :vcat)
         dim = 1
@@ -285,32 +292,37 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         error("unapply_array() called on a non-array expression")
     end
 
-    if !(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
+    if !array_checked #isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
         # if we recursively called this with subslicedim (below), 
         # don't do these checks
         # TODO: if there are nested arrays in the match, these checks
         #       should actually be done!
         pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
         pushnt!(info.tests, _eval(check_dim_size_expr(val, dim, expr)))
+        array_checked=true
     end
 
     exprs = expr.args
-
+    seen_dots = false
     if (isempty(getvars(exprs)))
         # this array is all constant, so just see if it matches
         push!(info.tests, :(all($val .== $expr)))
     else
         for i = 1:length(exprs)
             if isexpr(exprs[i], :(...))
-                if i < length(exprs) || ndims(exprs) > 1
-                    error("elipses (...) are only allowed in the last position of an Array pattern match.")
+                if seen_dots # i < length(exprs) || ndims(exprs) > 1
+                    error("elipses (...) are only allowed once in an an Array pattern match.") #in the last position of
                 end
-                sym = to_array_type(exprs[end].args[1])
-                unapply(_eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i:size($val,$dim+max(ndims($val)-2,0))))), 
-                        sym, syms, _eval, info)
+                seen_dots = true
+                sym = to_array_type(exprs[i].args[1])
+                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i:(size($val,$dim+max(ndims($val)-2,0))-$(length(exprs)-i)))))
+                unapply(s, sym, syms, _eval, info, array_checked)
+            elseif seen_dots
+                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), (size($val,$dim+max(ndims($val)-2,0))-$(length(exprs)-i)))))
+                unapply(s, exprs[i], syms, _eval, info, array_checked)
             else
                 s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i)))
-                unapply(s, exprs[i], syms, _eval, info)
+                unapply(s, exprs[i], syms, _eval, info, array_checked)
             end
         end
     end
