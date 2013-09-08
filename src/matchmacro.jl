@@ -185,7 +185,8 @@ function unapply(val, expr::Expr, syms, _eval::Function,
                 error("Too many parameters specified for type $typ")
             end
 
-            if (length(parms) == 0 || !isexpr(parms[end], :(...))) && length(fields) > length(parms)
+            if (length(parms) == 0 || !any([isexpr(p, :(...)) for p in parms])) && 
+                    length(fields) > length(parms)
                 error("Not matching against all parameters of $typ")
             end
 
@@ -236,13 +237,17 @@ function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Fu
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
     # end
     
+    seen_dots = false
     for i = 1:length(exprs)
         if isexpr(exprs[i], :(...))
-            if i < length(exprs) || ndims(exprs) > 1
-                error("elipses (...) are only allowed in the last position of an Array/Tuple pattern match.")
+            if seen_dots #i < length(exprs) || ndims(exprs) > 1
+                error("elipses (...) are only allowed once in an Array/Tuple pattern match.") #in the last position of
             end
-            sym = to_array_type(exprs[end].args[1])
-            unapply(_eval(:($val[$i:end])), sym, syms, _eval, info, array_checked)
+            seen_dots = true
+            sym = to_array_type(exprs[i].args[1])
+            unapply(_eval(:($val[$i:(end-$(length(exprs)-i))])), sym, syms, _eval, info, array_checked)
+        elseif seen_dots
+            unapply(_eval(:($val[end-$(length(exprs)-i)])), exprs[i], syms, _eval, info, array_checked)
         else
             unapply(_eval(:($val[$i])), exprs[i], syms, _eval, info, array_checked)
         end
@@ -256,9 +261,9 @@ end
 
 function unapply(vs::AbstractArray, es::AbstractArray, syms, _eval::Function, 
                  info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
-    if length(es) == 1 && isexpr(es[1], :(...))
+    if isexpr(es[1], :(...))
         sym = to_array_type(es[1].args[1])
-        unapply([vs...], sym, syms, _eval, info, array_checked)
+        unapply(vs[1:end-(length(es)-1)], sym, syms, _eval, info, array_checked)
 
     elseif length(es) == length(vs) == 1
         unapply(vs[1], es[1], syms, _eval, info, array_checked)

@@ -70,7 +70,7 @@ arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 # generate an expression to check the size of a variable dimension against an array of expressions
 
 function check_dim_size_expr(val, dim::Integer, ex::Expr)
-    if length(ex.args) == 0 || !any([isexpr(ex.args[i], :(...)) for i=1:length(ex.args)])
+    if length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
         :($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
     else
         :($dim <= ndims($val) && size($val, $dim) >= $(length(ex.args)-1))
@@ -84,7 +84,7 @@ end
 # generate an expression to check the length of a tuple variable against a tuple expression
 
 function check_tuple_len_expr(val, ex::Expr)
-    if length(ex.args) == 0 || !isexpr(ex.args[end], :(...))
+    if length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
         :(length($val) == $(length(ex.args)))
     else
         :(length($val) >= $(length(ex.args)-1))
@@ -94,7 +94,7 @@ end
 function check_tuple_len(val::Expr, ex::Expr)
     if !isexpr(val, :tuple) || !isexpr(ex, :tuple)
         false
-    elseif length(ex.args) == 0 || !isexpr(ex.args[end], :(...))
+    elseif length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
         length(val.args) == length(ex.args)
     else
         length(val.args) >= length(ex.args)-1
