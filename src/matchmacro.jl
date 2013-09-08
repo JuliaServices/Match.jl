@@ -68,8 +68,12 @@ function unapply(val, expr::Expr, syms, _eval::Function,
         unapply_array(val, Expr(:hcat, expr.args...), syms, _eval, info)
 
     elseif isexpr(expr, :tuple)
-        pushnt!(info.tests, _eval(:(isa($val, Tuple))))
-        pushnt!(info.tests, _eval(check_tuple_len_expr(val, expr)))
+        if isexpr(val, :tuple)
+            check_tuple_len(val, expr)
+        else
+            pushnt!(info.tests, _eval(:(isa($val, Tuple))))
+            pushnt!(info.tests, _eval(check_tuple_len_expr(val, expr)))
+        end
 
         unapply(val, expr.args, syms, _eval, info, array_checked)
 
@@ -91,8 +95,8 @@ function unapply(val, expr::Expr, syms, _eval::Function,
 
 # Match a || b (i.e., match either expression)
     elseif isexpr(expr, :(||))
-        info1 = unapply(val, expr.args[1], syms, _eval, array_checked)
-        info2 = unapply(val, expr.args[2], syms, _eval, array_checked)
+        info1 = unapply(val, expr.args[1], syms, _eval, MatchExprInfo(), array_checked)
+        info2 = unapply(val, expr.args[2], syms, _eval, MatchExprInfo(), array_checked)
 
         ### info.localsyms
         
@@ -292,11 +296,12 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         error("unapply_array() called on a non-array expression")
     end
 
-    if !array_checked #isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
+    if !array_checked #!(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
         # if we recursively called this with subslicedim (below), 
         # don't do these checks
         # TODO: if there are nested arrays in the match, these checks
         #       should actually be done!
+        # TODO: need to make this test more robust if we're only doing it once...
         pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
         pushnt!(info.tests, _eval(check_dim_size_expr(val, dim, expr)))
         array_checked=true

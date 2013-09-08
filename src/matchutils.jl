@@ -91,6 +91,16 @@ function check_tuple_len_expr(val, ex::Expr)
     end
 end
 
+function check_tuple_len(val::Expr, ex::Expr)
+    if !isexpr(val, :tuple) || !isexpr(ex, :tuple)
+        false
+    elseif length(ex.args) == 0 || !isexpr(ex.args[end], :(...))
+        length(val.args) == length(ex.args)
+    else
+        length(val.args) >= length(ex.args)-1
+    end
+end
+
 
 #
 # joinexprs
