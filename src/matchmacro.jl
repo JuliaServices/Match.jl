@@ -2,13 +2,13 @@
 ### Match Expression Info
 
 immutable MatchExprInfo
-    tests        ::Vector
-    assignments  ::Vector
-    guards       ::Vector{Expr}
-    localsyms    ::Vector{Symbol}
+    tests       ::Vector
+    assignments ::Vector
+    guards      ::Vector{Expr}
+    test_assign ::Vector
 end
 
-MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Symbol[])
+MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Any[])
 
 
 ## unapply(val, expr, syms, info)
@@ -70,12 +70,14 @@ function unapply(val, expr::Expr, syms, _eval::Function,
     elseif isexpr(expr, :tuple)
         if isexpr(val, :tuple)
             check_tuple_len(val, expr)
+            unapply(val.args, expr.args, syms, _eval, info, array_checked)
         else
             pushnt!(info.tests, _eval(:(isa($val, Tuple))))
             pushnt!(info.tests, _eval(check_tuple_len_expr(val, expr)))
+            unapply(val, expr.args, syms, _eval, info, array_checked)
         end
 
-        unapply(val, expr.args, syms, _eval, info, array_checked)
+        info
 
 # Match x::Type
     elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol) # && isa(eval(current_module(), expr.args[2]), Type)
@@ -98,18 +100,18 @@ function unapply(val, expr::Expr, syms, _eval::Function,
         info1 = unapply(val, expr.args[1], syms, _eval, MatchExprInfo(), array_checked)
         info2 = unapply(val, expr.args[2], syms, _eval, MatchExprInfo(), array_checked)
 
-        ### info.localsyms
+        ### info.test_assign
         
         # these are used to determine the assignment if the same variable is matched in both a and b
         # they are set to false by default
         g1 = gensym("test1")
         g2 = gensym("test2")
 
-        append!(info.localsyms, info1.localsyms)
-        append!(info.localsyms, info2.localsyms)
+        append!(info.test_assign, info1.test_assign)
+        append!(info.test_assign, info2.test_assign)
 
-        if length(info1.assignments) > 0;  push!(info.localsyms, g1);  end
-        if length(info2.assignments) > 0;  push!(info.localsyms, g2);  end
+        if length(info1.assignments) > 0;  push!(info.test_assign, (g1, false));  end
+        if length(info2.assignments) > 0;  push!(info.test_assign, (g2, false));  end
 
         ### info.tests
 
@@ -244,7 +246,7 @@ function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Fu
                 error("elipses (...) are only allowed once in an Array/Tuple pattern match.") #in the last position of
             end
             seen_dots = true
-            sym = to_array_type(exprs[i].args[1])
+            sym = array_type_of(exprs[i].args[1])
             unapply(_eval(:($val[$i:(end-$(length(exprs)-i))])), sym, syms, _eval, info, array_checked)
         elseif seen_dots
             unapply(_eval(:($val[end-$(length(exprs)-i)])), exprs[i], syms, _eval, info, array_checked)
@@ -262,7 +264,7 @@ end
 function unapply(vs::AbstractArray, es::AbstractArray, syms, _eval::Function, 
                  info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
     if isexpr(es[1], :(...))
-        sym = to_array_type(es[1].args[1])
+        sym = array_type_of(es[1].args[1])
         unapply(vs[1:end-(length(es)-1)], sym, syms, _eval, info, array_checked)
 
     elseif length(es) == length(vs) == 1
@@ -301,6 +303,8 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         error("unapply_array() called on a non-array expression")
     end
 
+    sdim = _eval(:($dim+max(ndims($val)-2,0)))
+
     if !array_checked #!(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
         # if we recursively called this with subslicedim (below), 
         # don't do these checks
@@ -308,7 +312,7 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         #       should actually be done!
         # TODO: need to make this test more robust if we're only doing it once...
         pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
-        pushnt!(info.tests, _eval(check_dim_size_expr(val, dim, expr)))
+        pushnt!(info.tests, _eval(check_dim_size_expr(val, sdim, expr)))
         array_checked=true
     end
 
@@ -324,17 +328,18 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
                     error("elipses (...) are only allowed once in an an Array pattern match.") #in the last position of
                 end
                 seen_dots = true
-                sym = to_array_type(exprs[i].args[1])
-                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i:(size($val,$dim+max(ndims($val)-2,0))-$(length(exprs)-i)))))
+                sym = array_type_of(exprs[i].args[1])
+                s = _eval(:(Match.subslicedim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i)))))
                 unapply(s, sym, syms, _eval, info, array_checked)
             elseif seen_dots
-                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), (size($val,$dim+max(ndims($val)-2,0))-$(length(exprs)-i)))))
+                s = _eval(:(Match.subslicedim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i)))))
                 unapply(s, exprs[i], syms, _eval, info, array_checked)
             else
-                s = _eval(:(Match.subslicedim($val, $dim + max(ndims($val)-2,0), $i)))
+                s = _eval(:(Match.subslicedim($val, $sdim, $i)))
                 unapply(s, exprs[i], syms, _eval, info, array_checked)
             end
         end
+
     end
 
     info
@@ -404,9 +409,9 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
                          end)
             end
 
-            localsyms = [:($x::Bool = false) for x in info.localsyms]
+            test_assign = [:($expr = $val) for (expr,val) in info.test_assign]
 
-            let_expr(expr, localsyms)
+            let_expr(expr, test_assign)
         end
     elseif isexpr(e, :line)
         Expr(:block, e, code)

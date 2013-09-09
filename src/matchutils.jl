@@ -69,7 +69,7 @@ arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 #
 # generate an expression to check the size of a variable dimension against an array of expressions
 
-function check_dim_size_expr(val, dim::Integer, ex::Expr)
+function check_dim_size_expr(val, dim, ex::Expr)
     if length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
         :($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
     else
@@ -125,11 +125,11 @@ let_expr(expr, assignments::AbstractArray) =
     length(assignments) > 0 ? Expr(:let, expr, assignments...) : expr
 
 #
-# to_array_type
+# array_type_of
 #
 # modify x::Type => x::AbstractArray{Type}
 
-function to_array_type(ex::Expr)
+function array_type_of(ex::Expr)
     if isexpr(ex, :(::))
         :($(ex.args[1])::AbstractArray{$(ex.args[2])})
     else
@@ -137,7 +137,7 @@ function to_array_type(ex::Expr)
     end
 end
 
-to_array_type(sym::Symbol) = :($sym::AbstractArray)
+array_type_of(sym::Symbol) = :($sym::AbstractArray)
 
 #
 # pushnt!

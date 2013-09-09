@@ -1,6 +1,8 @@
 using Match
 using Base.Test
 
+require("testtypes.jl")
+
 import Base: show
 
 # Type matching
@@ -24,17 +26,17 @@ d = (Int=>String)[1=>"a",2=>"b"]
 # Pattern extraction
 # inspired by http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/
 
-type Address
-    street::String
-    city::String
-    zip::String
-end
+# type Address
+#     street::String
+#     city::String
+#     zip::String
+# end
 
-type Person
-    firstname::String
-    lastname::String
-    address::Address
-end
+# type Person
+#     firstname::String
+#     lastname::String
+#     address::Address
+# end
 
 test2(person) = @match person begin
     Person("Julia", lastname,  _) => "Found Julia $lastname"
@@ -52,24 +54,25 @@ end
 # Guards, pattern extraction
 # translated from Scala Case-classes http://docs.scala-lang.org/tutorials/tour/case-classes.html
 
-#
-# Untyped lambda calculus definitions
-#
-abstract Term
+##
+## Untyped lambda calculus definitions
+##
 
-immutable Var <: Term
-    name::String
-end
+# abstract Term
 
-immutable Fun <: Term
-    arg::String
-    body::Term
-end
+# immutable Var <: Term
+#     name::String
+# end
 
-immutable App <: Term
-    f::Term
-    v::Term
-end
+# immutable Fun <: Term
+#     arg::String
+#     body::Term
+# end
+
+# immutable App <: Term
+#     f::Term
+#     v::Term
+# end
 
 # scala defines these automatically...
 ==(x::Var, y::Var) = x.name == y.name
