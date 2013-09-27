@@ -386,7 +386,7 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
 
             let_expr(expr, localsyms)
         end
-    elseif isexpr(e, :line)
+    elseif isexpr(e, :line) || isa(e, LineNumberNode)
         Expr(:block, e, code)
         #code
     elseif isa(e, Bool)
