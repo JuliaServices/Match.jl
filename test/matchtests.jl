@@ -228,3 +228,15 @@ end
 m = reshape([1:8], (2,2,2))
 @assert @match(m, [a b])                                    == ([1 3; 2 4], [5 7; 6 8])
 @assert @match(m, [[1 a; b c] d])                           == (3,2,4,[5 7; 6 8])
+
+
+
+# match against an expression
+function get_args(ex::Expr)
+    @match ex begin
+        Expr(:call, {:+, args...}, _) => args
+        _ => "None"
+    end
+end
+
+@assert get_args(Expr(:call, :+, :x, 1)) == [:x, 1]

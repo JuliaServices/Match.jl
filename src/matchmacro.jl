@@ -60,7 +60,7 @@ function unapply(val, expr::Expr, syms, _eval::Function,
         unapply(val, expr.args[1], union(guardsyms, syms), _eval, info, array_checked)
 
 # Array/tuple matching
-    elseif isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat)
+    elseif isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat) || isexpr(expr, :cell1d)
         unapply_array(val, expr, syms, _eval, info)
 
     elseif isexpr(expr, :row)
@@ -295,7 +295,7 @@ end
 
 function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
 
-    if isexpr(expr, :vcat)
+    if isexpr(expr, :vcat) || isexpr(expr, :cell1d)
         dim = 1
     elseif isexpr(expr, :hcat)
         dim = 2
