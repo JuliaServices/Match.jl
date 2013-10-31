@@ -244,7 +244,7 @@ Extract first element, rest of vector
   1
 
   julia> b
-  3-element Array{Int64,1}:
+  3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
    2
    3
    4
