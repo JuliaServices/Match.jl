@@ -349,17 +349,19 @@ end
 function gen_match_expr(val, e, code, use_let::Bool=true)
 
     valsyms = getvars(val)
+    syms = getvars(e)
 
-    if isempty(valsyms)
+    if isempty(valsyms) && !(symbol("@r_str") in syms)
         _eval = x->:($(eval(x)))
     else
         _eval = identity
     end
 
+    syms = filter(x->!(beginswith(string(x), "@")), syms)
+
 # pattern => val
     if isexpr(e, :(=>))
         (pattern, value) = e.args
-        syms = getvars(value)
         info = unapply(val, pattern, syms, _eval)
 
         # Create let statement for guards, and add it to tests
@@ -435,7 +437,7 @@ macro match(v, m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_])
+        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!beginswith(string(x),"@"), syms)
         if length(vars) == 0
             code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
         elseif length(vars) == 1
@@ -460,7 +462,7 @@ function fmatch(v, m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_])
+        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x -> !beginswith(string(x), '@'), syms)
         if length(vars) == 0
             code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
         elseif length(vars) == 1
