@@ -362,6 +362,13 @@ function gen_match_expr(val, e, code, use_let::Bool=true)
 # pattern => val
     if isexpr(e, :(=>))
         (pattern, value) = e.args
+
+        # Special case: match against a regex held in a variable
+        if isa(pattern, Symbol) && isdefined(current_module(),pattern) &&
+            isa(eval(current_module(),pattern), Regex)
+            deleteat!(syms, findfirst(syms, pattern)[1])
+        end
+
         info = unapply(val, pattern, syms, _eval)
 
         # Create let statement for guards, and add it to tests
