@@ -1,3 +1,3 @@
 # Run Match tests
 
-include("matchtests.jl")
+include(joinpath(Pkg.dir("Match"), "test", "matchtests.jl"))
