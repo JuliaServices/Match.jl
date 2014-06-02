@@ -1,6 +1,11 @@
 ### Utilities used by @match macro
 # author: Kevin Squire (@kmsquire)
 
+#
+# Fallback for ismatch
+#
+
+ismatch(r,s) = (r == s)
 
 #
 # subslicedim

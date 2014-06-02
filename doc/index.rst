@@ -178,9 +178,11 @@ Regular Expressions
 Julia has regular expressions already, of course.  Match builds
 on them by allowing binding, by treating patterns like functions::
 
-  Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+  # Note: the following test only works because Ipv4Addr and EmailAddr
+  # are (module-level) globals!
 
-  EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+  const Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+  const EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
   function regex_test(str, a=199)
     @match str begin
@@ -221,6 +223,10 @@ on them by allowing binding, by treating patterns like functions::
   julia> regex_test("Open the pod bay doors, HAL.")
   "No match"
 
+As noted in the comment above, matching against regular expressions in
+variables only works when the variables are global variables
+(preferably constants).  This is because macros do not have access to
+local variables.
 
 Deep Matching Against Arrays
 ----------------------------

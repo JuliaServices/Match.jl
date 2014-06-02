@@ -29,21 +29,21 @@ MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
 
 function unapply(val, sym::Symbol, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
-# Symbol defined as a Regex (other Regex cases are handled below)
-    if isdefined(current_module(),sym) && 
-           isa(eval(current_module(),sym), Regex) &&
-           !(sym in guardsyms) && !(sym in valsyms)
-        push!(info.tests, :(ismatch($sym, $val)))
+# # Symbol defined as a Regex (other Regex cases are handled below)
+#     if isdefined(current_module(),sym) && 
+#            isa(eval(current_module(),sym), Regex) &&
+#            !(sym in guardsyms) && !(sym in valsyms)
+#         push!(info.tests, :(Match.ismatch($sym, $val)))
 
 # Symbol in syms
-    elseif sym in syms
-        sym in guardsyms && push!(info.guard_assignments, (sym, val))
-        sym in valsyms   && push!(info.assignments, (sym, val))
+    if sym in syms && ((inguard = (sym in guardsyms)) | (inval = (sym in valsyms)))
+        inguard && push!(info.guard_assignments, (sym, val))
+        inval   && push!(info.assignments, (sym, val))
 
 # Constants
-    elseif isconst(sym) && !isa(eval(sym), Function)
-        push!(info.tests, :($val == $sym))
-
+    elseif isdefined(current_module(),sym) # module global
+        typ = typeof(eval(current_module(),sym))
+        typ != Function && push!(info.tests, :(Match.ismatch($sym,$val)))
     end
 
     info
@@ -77,7 +77,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         sym = expr.args[1]
 
         if isconst(sym) && !isa(eval(sym), Function)
-            push!(info.tests, :($val == $expr))
+            push!(info.tests, :(Match.ismatch($val, $expr)))
         else
             push!(info.tests, :(isa($val, $typ)))
             if sym in syms
@@ -207,19 +207,19 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         else
     # Other calls: evaluate the expression and test for equality
             # TODO: test me!
-            push!(info.tests, :($val == $expr))
+            push!(info.tests, :(Match.ismatch($expr, $val)))
             info
         end
 
 # Regex strings (r"[a-z]*")
     elseif isexpr(expr, :macrocall) && expr.args[1] == symbol("@r_str")
-        append!(info.tests, [:(isa($val, String)), :(ismatch($expr, $val))])
+        append!(info.tests, [:(isa($val, String)), :(Match.ismatch($expr, $val))])
         info
 
 # Other expressions: evaluate the expression and test for equality...
     else
         # TODO: test me!
-        push!(info.tests, :($val == $expr))
+        push!(info.tests, :(Match.ismatch($expr, $val)))
         info
     end
 end
@@ -279,7 +279,7 @@ unapply(vals::Tuple, exprs::Tuple, syms, guardsyms, valsyms,
 # fallback
 function unapply(val, expr, _1, _2, _3, 
                  info, array_checked::Bool=false)
-    push!(info.tests, :($val == $expr))
+    push!(info.tests, :(Match.ismatch($expr, $val)))
     info
 end
 

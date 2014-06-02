@@ -148,10 +148,20 @@ end
 
 # Regular Expressions
 
-Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
-EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+# Note: the following test only works because Ipv4Addr and EmailAddr
+# are (module-level) globals!
+
+const Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+const EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
 function regex_test(str)
+    ## Defining these in the function doesn't work, because the macro
+    ## (and related functions) don't have access to the local
+    ## variables.
+
+    # Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
+    # EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
+
     @match str begin
        Ipv4Addr(_, _, octet3, _),       if int(octet3) > 30 end => "IPv4 address with octet 3 > 30"
        Ipv4Addr()                                               => "IPv4 address"
