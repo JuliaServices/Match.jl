@@ -42,7 +42,7 @@ test2(person) = @match person begin
     Person("Julia", lastname,  _) => "Found Julia $lastname"
     Person(firstname, "Julia", _) => "$firstname Julia was here!"
     Person(firstname, lastname ,Address(_, "Cambridge", zip)) => "$firstname $lastname lives in zip $zip"
-    Person(_...)  => "Unknown person!"
+    _::Person  => "Unknown person!"
 end
 
 @test test2(Person("Julia", "Robinson", Address("450 Serra Mall", "Stanford", "94305")))         == "Found Julia Robinson"
@@ -151,9 +151,8 @@ end
 Ipv4Addr = r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})"
 EmailAddr = r"\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,4})\b"i
 
-function regex_test(str, a=199)
+function regex_test(str)
     @match str begin
-       Ipv4Addr(string(a), _, octet3, _)                        => "$a._.$octet3._ address found"
        Ipv4Addr(_, _, octet3, _),       if int(octet3) > 30 end => "IPv4 address with octet 3 > 30"
        Ipv4Addr()                                               => "IPv4 address"
 
@@ -166,9 +165,7 @@ function regex_test(str, a=199)
     end
 end
 
-@assert regex_test("199.27.77.133")                == "199._.77._ address found"
 @assert regex_test("128.97.27.37")                 == "IPv4 address"
-@assert regex_test("128.97.27.37",128)             == "128._.27._ address found"
 @assert regex_test("96.17.70.24")                  == "IPv4 address with octet 3 > 30"
 
 @assert regex_test("beej@cs.ucla.edu")             == "UCLA email address"

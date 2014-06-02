@@ -43,10 +43,25 @@ subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
 #
 # get all symbols in an expression (including undefined symbols)
 
-getvars(e)                 = Symbol[] #Set{Symbol}()
-getvars(e ::Symbol)        = Symbol[e] #Set{Symbol}(e)
-getvars(e ::Expr)          = if !isexpr(e, :call) || !arg1isa(e, Type); getvars(e.args); else Symbol[]; end
-getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
+getvars(e,all=false)         = Symbol[]
+getvars(e::Symbol,all=false) = beginswith(string(e),'@') ? Symbol[] : Symbol[e]
+
+function getvars(e::Expr, all=false)
+    if isexpr(e, :call) 
+        if (arg1isa(e, Type) || arg1isa(e, Regex)) && length(e.args) > 1
+            getvars(e.args[2:end], all)
+        elseif all
+            getvars(e.args, all)
+        else
+            Symbol[]
+        end
+    elseif isexpr(e, :copyast) || isexpr(e, :quote)
+        Symbol[]
+    else
+        getvars(e.args, all)
+    end
+end
+getvars(es::AbstractArray,all=false) = union([getvars(e,all) for e in es]...)
 
 #
 # getvar
@@ -112,7 +127,7 @@ function joinexprs(exprs::AbstractArray, oper::Symbol, default=:nothing)
 
     len == 0 ? default :
     len == 1 ? exprs[1] :
-               Expr(oper, exprs...)
+               Expr(oper, joinexprs(sub(exprs, 1:(len-1)), oper, default), exprs[end])
 end
 
 
@@ -138,8 +153,3 @@ function array_type_of(ex::Expr)
 end
 
 array_type_of(sym::Symbol) = :($sym::AbstractArray)
-
-#
-# pushnt!
-#
-pushnt!(dest, value) = if value != true; push!(dest, value); end

@@ -1,17 +1,17 @@
-
 ### Match Expression Info
 
 immutable MatchExprInfo
-    tests       ::Vector
-    assignments ::Vector
-    guards      ::Vector{Expr}
-    test_assign ::Vector
+    tests             ::Vector{Expr}
+    guard_assignments ::Vector{NTuple}
+    assignments       ::Vector{NTuple}
+    guards            ::Vector{Expr}
+    test_assign       ::Vector{NTuple}
 end
 
-MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Any[])
+MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
 
 
-## unapply(val, expr, syms, info)
+## unapply(val, expr, syms, guardsyms, valsyms, info)
 ##
 ## Generate code which matches val with expr, 
 ## decomposing val or expr as needed.
@@ -27,18 +27,18 @@ MatchExprInfo() = MatchExprInfo(Any[],Any[],Expr[],Any[])
 ## * More complex expressions are handled specially
 ##   (e.g., a || b allows matching against a or b)
 
-function unapply(val, sym::Symbol, syms, _eval::Function, 
-                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
+function unapply(val, sym::Symbol, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
 # Symbol defined as a Regex (other Regex cases are handled below)
     if isdefined(current_module(),sym) && 
            isa(eval(current_module(),sym), Regex) &&
-           !(sym in syms)
+           !(sym in guardsyms) && !(sym in valsyms)
         push!(info.tests, :(ismatch($sym, $val)))
 
 # Symbol in syms
     elseif sym in syms
-        push!(info.assignments, (sym, val))
+        sym in guardsyms && push!(info.guard_assignments, (sym, val))
+        sym in valsyms   && push!(info.assignments, (sym, val))
 
 # Constants
     elseif isconst(sym) && !isa(eval(sym), Function)
@@ -49,32 +49,24 @@ function unapply(val, sym::Symbol, syms, _eval::Function,
     info
 end
 
-function unapply(val, expr::Expr, syms, _eval::Function, 
-                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
-
-# Extract guards
-    if length(expr.args) == 2 && isexpr(expr.args[2], :if)
-
-        push!(info.guards, expr.args[2].args[1])
-        guardsyms = getvars(expr.args[2])
-        unapply(val, expr.args[1], union(guardsyms, syms), _eval, info, array_checked)
+function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
 # Array/tuple matching
-    elseif isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat) || isexpr(expr, :cell1d)
-        unapply_array(val, expr, syms, _eval, info)
+    if isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat) || isexpr(expr, :cell1d)
+        unapply_array(val, expr, syms, guardsyms, valsyms, info)
 
     elseif isexpr(expr, :row)
         # pretend it's :hcat
-        unapply_array(val, Expr(:hcat, expr.args...), syms, _eval, info)
+        unapply_array(val, Expr(:hcat, expr.args...), syms, guardsyms, valsyms, info)
 
     elseif isexpr(expr, :tuple)
         if isexpr(val, :tuple)
             check_tuple_len(val, expr)
-            unapply(val.args, expr.args, syms, _eval, info, array_checked)
+            unapply(val.args, expr.args, syms, guardsyms, valsyms, info, array_checked)
         else
-            pushnt!(info.tests, _eval(:(isa($val, Tuple))))
-            pushnt!(info.tests, _eval(check_tuple_len_expr(val, expr)))
-            unapply(val, expr.args, syms, _eval, info, array_checked)
+            push!(info.tests, :(isa($val, Tuple)))
+            push!(info.tests, check_tuple_len_expr(val, expr))
+            unapply(val, expr.args, syms, guardsyms, valsyms, info, array_checked)
         end
 
         info
@@ -87,9 +79,10 @@ function unapply(val, expr::Expr, syms, _eval::Function,
         if isconst(sym) && !isa(eval(sym), Function)
             push!(info.tests, :($val == $expr))
         else
-            pushnt!(info.tests, _eval(:(isa($val, $typ))))
+            push!(info.tests, :(isa($val, $typ)))
             if sym in syms
-                push!(info.assignments, (expr, val))
+                sym in guardsyms && push!(info.guard_assignments, (expr, val))
+                sym in valsyms   && push!(info.assignments, (expr, val))
             end
         end
 
@@ -97,8 +90,8 @@ function unapply(val, expr::Expr, syms, _eval::Function,
 
 # Match a || b (i.e., match either expression)
     elseif isexpr(expr, :(||))
-        info1 = unapply(val, expr.args[1], syms, _eval, MatchExprInfo(), array_checked)
-        info2 = unapply(val, expr.args[2], syms, _eval, MatchExprInfo(), array_checked)
+        info1 = unapply(val, expr.args[1], syms, guardsyms, valsyms, MatchExprInfo(), array_checked)
+        info2 = unapply(val, expr.args[2], syms, guardsyms, valsyms, MatchExprInfo(), array_checked)
 
         ### info.test_assign
         
@@ -192,10 +185,10 @@ function unapply(val, expr::Expr, syms, _eval::Function,
                 error("Not matching against all parameters of $typ")
             end
 
-            pushnt!(info.tests, _eval(:(isa($val, $typ))))
+            push!(info.tests, :(isa($val, $typ)))
             dotvars = Expr[:($val.($(Expr(:quote, var)))) for var in fields]
 
-            unapply(dotvars, parms, syms, _eval, info, array_checked)
+            unapply(dotvars, parms, syms, guardsyms, valsyms, info, array_checked)
 
     # Match Regex "calls"
         elseif arg1isa(expr, Regex)
@@ -207,7 +200,7 @@ function unapply(val, expr::Expr, syms, _eval::Function,
             # TODO: test number of captures against length of parms?
 
             if length(parms) > 0
-                unapply(:($m.captures), parms, syms, _eval, info, array_checked)
+                unapply(:($m.captures), parms, syms, guardsyms, valsyms, info, array_checked)
             else
                 info
             end
@@ -220,7 +213,7 @@ function unapply(val, expr::Expr, syms, _eval::Function,
 
 # Regex strings (r"[a-z]*")
     elseif isexpr(expr, :macrocall) && expr.args[1] == symbol("@r_str")
-        append!(info.tests, [_eval(:(isa($val, String))), :(ismatch($expr, $val))])
+        append!(info.tests, [:(isa($val, String)), :(ismatch($expr, $val))])
         info
 
 # Other expressions: evaluate the expression and test for equality...
@@ -233,8 +226,8 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Function, 
-                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
+function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, guardsyms, valsyms, 
+                 info, array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
     # end
@@ -247,11 +240,11 @@ function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, _eval::Fu
             end
             seen_dots = true
             sym = array_type_of(exprs[i].args[1])
-            unapply(_eval(:($val[$i:(end-$(length(exprs)-i))])), sym, syms, _eval, info, array_checked)
+            unapply(:($val[$i:(end-$(length(exprs)-i))]), sym, syms, guardsyms, valsyms, info, array_checked)
         elseif seen_dots
-            unapply(_eval(:($val[end-$(length(exprs)-i)])), exprs[i], syms, _eval, info, array_checked)
+            unapply(:($val[end-$(length(exprs)-i)]), exprs[i], syms, guardsyms, valsyms, info, array_checked)
         else
-            unapply(_eval(:($val[$i])), exprs[i], syms, _eval, info, array_checked)
+            unapply(:($val[$i]), exprs[i], syms, guardsyms, valsyms, info, array_checked)
         end
     end
 
@@ -261,31 +254,31 @@ end
 
 # Match arrays against arrays
 
-function unapply(vs::AbstractArray, es::AbstractArray, syms, _eval::Function, 
-                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
+function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms, 
+                 info, array_checked::Bool=false)
     if isexpr(es[1], :(...))
         sym = array_type_of(es[1].args[1])
-        unapply(vs[1:end-(length(es)-1)], sym, syms, _eval, info, array_checked)
+        unapply(vs[1:end-(length(es)-1)], sym, syms, guardsyms, valsyms, info, array_checked)
 
     elseif length(es) == length(vs) == 1
-        unapply(vs[1], es[1], syms, _eval, info, array_checked)
+        unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
 
     elseif length(es) == length(vs) == 0
         info
 
     else
-        unapply(vs[1], es[1], syms, _eval, info, array_checked)
-        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, _eval, info, array_checked)
+        unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
+        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
     end
 end
 
-unapply(vals::Tuple, exprs::Tuple, syms, _eval::Function, 
-        info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false) = 
-    unapply([vals...], [exprs...], syms, _eval, info, array_checked)
+unapply(vals::Tuple, exprs::Tuple, syms, guardsyms, valsyms, 
+        info, array_checked::Bool=false) = 
+    unapply([vals...], [exprs...], syms, guardsyms, valsyms, info, array_checked)
 
 # fallback
-function unapply(val, expr, _, _eval::Function, 
-                 info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
+function unapply(val, expr, _1, _2, _3, 
+                 info, array_checked::Bool=false)
     push!(info.tests, :($val == $expr))
     info
 end
@@ -293,7 +286,7 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing arrays
 
-function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprInfo=MatchExprInfo(), array_checked::Bool=false)
+function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
     if isexpr(expr, :vcat) || isexpr(expr, :cell1d)
         dim = 1
@@ -303,7 +296,7 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         error("unapply_array() called on a non-array expression")
     end
 
-    sdim = _eval(:($dim+max(ndims($val)-2,0)))
+    sdim = :($dim+max(ndims($val)-2,0))
 
     if !array_checked #!(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
         # if we recursively called this with subslicedim (below), 
@@ -311,8 +304,8 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
         # TODO: if there are nested arrays in the match, these checks
         #       should actually be done!
         # TODO: need to make this test more robust if we're only doing it once...
-        pushnt!(info.tests, _eval(:(isa($val, AbstractArray))))
-        pushnt!(info.tests, _eval(check_dim_size_expr(val, sdim, expr)))
+        push!(info.tests, :(isa($val, AbstractArray)))
+        push!(info.tests, check_dim_size_expr(val, sdim, expr))
         array_checked=true
     end
 
@@ -329,14 +322,14 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
                 end
                 seen_dots = true
                 sym = array_type_of(exprs[i].args[1])
-                s = _eval(:(Match.subslicedim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i)))))
-                unapply(s, sym, syms, _eval, info, array_checked)
+                s = :(Match.subslicedim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i))))
+                unapply(s, sym, syms, guardsyms, valsyms, info, array_checked)
             elseif seen_dots
-                s = _eval(:(Match.subslicedim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i)))))
-                unapply(s, exprs[i], syms, _eval, info, array_checked)
+                s = :(Match.subslicedim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i))))
+                unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             else
-                s = _eval(:(Match.subslicedim($val, $sdim, $i)))
-                unapply(s, exprs[i], syms, _eval, info, array_checked)
+                s = :(Match.subslicedim($val, $sdim, $i))
+                unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             end
         end
 
@@ -346,57 +339,55 @@ function unapply_array(val, expr::Expr, syms, _eval::Function, info::MatchExprIn
 end
 
 
-function gen_match_expr(val, e, code, use_let::Bool=true)
-
-    valsyms = getvars(val)
-    syms = getvars(e)
-
-    if isempty(valsyms) && !(symbol("@r_str") in syms)
-        _eval = x->:($(eval(x)))
-    else
-        _eval = identity
-    end
-
-    syms = filter(x->!(beginswith(string(x), "@")), syms)
+function gen_match_expr(v, e, code, use_let::Bool=true)
 
 # pattern => val
     if isexpr(e, :(=>))
+        info = MatchExprInfo()
+
         (pattern, value) = e.args
 
-        # Special case: match against a regex held in a variable
-        if isa(pattern, Symbol) && isdefined(current_module(),pattern) &&
-            isa(eval(current_module(),pattern), Regex)
-            deleteat!(syms, findfirst(syms, pattern)[1])
+        # Extract guards
+        if isexpr(pattern, :tuple) && length(pattern.args) == 2 && isexpr(pattern.args[2], :if)
+            guard = pattern.args[2].args[1]
+            pattern = pattern.args[1]
+            push!(info.guards, guard)
+            guardsyms = getvars(guard, true)
+        else
+            guardsyms = Symbol[]
         end
 
-        info = unapply(val, pattern, syms, _eval)
+        syms = getvars(pattern)
+        valsyms = getvars(value, true)
+        
+        info = unapply(v, pattern, syms, guardsyms, valsyms, info)
 
         # Create let statement for guards, and add it to tests
         if length(info.guards) > 0
             guard_expr = joinexprs(info.guards, :&&)
 
-            guardsyms = getvars(guard_expr)
-            guard_assignments = filter(a->(getvar(a[1]) in guardsyms), 
-                                       info.assignments)
-            guard_assignment_exprs = Expr[:($expr = $val) for (expr, val) in guard_assignments]
+            #guard_assignments = filter(a->(getvar(a[1]) in guardsyms), 
+            #                           info.assignments)
+            guard_assignment_exprs = Expr[:($expr = $val) for (expr, val) in info.guard_assignments]
 
             guard_tests = let_expr(guard_expr, guard_assignment_exprs)
 
-            pushnt!(info.tests, guard_tests)
+            push!(info.tests, guard_tests)
         end
-                                      
+
         # filter and escape regular let assignments
-        assignments = filter(assn->(sym = assn[1]; 
-                                    isa(sym, Symbol) && sym in syms ||
-                                    isexpr(sym, :(::)) && sym.args[1] in syms),
-                             info.assignments)
+        # assignments = filter(assn->(sym = assn[1]; 
+        #                             isa(sym, Symbol) && sym in syms ||
+        #                             isexpr(sym, :(::)) && sym.args[1] in syms),
+        #                      info.assignments)
+        assignments = info.assignments
 
         if use_let
             # Wrap value statement in let
             let_assignments = Expr[:($expr = $val) for (expr, val) in assignments]
             expr = let_expr(value, let_assignments)
         else
-            esc_assignments = Expr[Expr(:(=), getvar(expr), _eval(val)) for (expr, val) in assignments]
+            esc_assignments = Expr[Expr(:(=), getvar(expr), val) for (expr, val) in assignments]
             expr = Expr(:block, esc_assignments..., value)
         end
 
@@ -458,29 +449,7 @@ macro match(v, m)
 end
 
 # Function producing/showing the generated code
-function fmatch(v, m)
-    code = :nothing
-
-    if isexpr(m, :block)
-        for e in reverse(m.args)
-            code = gen_match_expr(v, e, code)
-        end
-    elseif isexpr(m, :(=>))
-        code = gen_match_expr(v, m, code)
-    else
-        code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x -> !beginswith(string(x), '@'), syms)
-        if length(vars) == 0
-            code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
-        elseif length(vars) == 1
-            code = gen_match_expr(v, Expr(:(=>), m, vars[1]), code, false)
-        else
-            code = gen_match_expr(v, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
-        end
-    end
-
-    code
-end
+fmatch(v, m) = macroexpand(:(@match $v $m))
 
 # The ismatch macro
 macro ismatch(val, m)
@@ -489,8 +458,5 @@ macro ismatch(val, m)
 end
 
 
-function fismatch(val, m)
-    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
-    code
-end
+fismatch(val, m) = macroexpand(:(@ismatch $val $m))
 
