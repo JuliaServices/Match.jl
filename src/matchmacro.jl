@@ -1,3 +1,5 @@
+using Compat
+
 ### Match Expression Info
 
 immutable MatchExprInfo
@@ -435,7 +437,7 @@ macro match(v, m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!beginswith(string(x),"@"), syms)
+        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!@compat(startswith(string(x),"@")), syms)
         if length(vars) == 0
             code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
         elseif length(vars) == 1

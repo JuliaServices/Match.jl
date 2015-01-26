@@ -1,6 +1,8 @@
 ### Utilities used by @match macro
 # author: Kevin Squire (@kmsquire)
 
+using Compat
+
 #
 # Fallback for ismatch
 #
@@ -49,7 +51,7 @@ subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
 # get all symbols in an expression (including undefined symbols)
 
 getvars(e,all=false)         = Symbol[]
-getvars(e::Symbol,all=false) = beginswith(string(e),'@') ? Symbol[] : Symbol[e]
+getvars(e::Symbol,all=false) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
 
 function getvars(e::Expr, all=false)
     if isexpr(e, :call)
