@@ -1,6 +1,8 @@
 ### Utilities used by @match macro
 # author: Kevin Squire (@kmsquire)
 
+using Compat
+
 #
 # Fallback for ismatch
 #
@@ -14,7 +16,7 @@ ismatch(r,s) = (r == s)
 
 function subslicedim{T<:AbstractArray}(A::T, d::Integer, i::Integer)
     if d < 1 || d > ndims(A)
-        throw(BoundsError()) 
+        throw(BoundsError())
     end
     sz = size(A)
     # Force 1x..x1 slices to extract the value
@@ -49,10 +51,10 @@ subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
 # get all symbols in an expression (including undefined symbols)
 
 getvars(e,all=false)         = Symbol[]
-getvars(e::Symbol,all=false) = beginswith(string(e),'@') ? Symbol[] : Symbol[e]
+getvars(e::Symbol,all=false) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
 
 function getvars(e::Expr, all=false)
-    if isexpr(e, :call) 
+    if isexpr(e, :call)
         if (arg1isa(e, Type) || arg1isa(e, Regex)) && length(e.args) > 1
             getvars(e.args[2:end], all)
         elseif all
@@ -141,7 +143,7 @@ end
 #
 # generate an optional let expression
 
-let_expr(expr, assignments::AbstractArray) = 
+let_expr(expr, assignments::AbstractArray) =
     length(assignments) > 0 ? Expr(:let, expr, assignments...) : expr
 
 #
