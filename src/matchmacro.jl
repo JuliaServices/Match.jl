@@ -13,7 +13,7 @@ MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
 
 ## unapply(val, expr, syms, guardsyms, valsyms, info)
 ##
-## Generate code which matches val with expr, 
+## Generate code which matches val with expr,
 ## decomposing val or expr as needed.
 ##
 ## * Constant values are tested for equality.
@@ -30,7 +30,7 @@ MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
 function unapply(val, sym::Symbol, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
 # # Symbol defined as a Regex (other Regex cases are handled below)
-#     if isdefined(current_module(),sym) && 
+#     if isdefined(current_module(),sym) &&
 #            isa(eval(current_module(),sym), Regex) &&
 #            !(sym in guardsyms) && !(sym in valsyms)
 #         push!(info.tests, :(Match.ismatch($sym, $val)))
@@ -94,7 +94,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         info2 = unapply(val, expr.args[2], syms, guardsyms, valsyms, MatchExprInfo(), array_checked)
 
         ### info.test_assign
-        
+
         # these are used to determine the assignment if the same variable is matched in both a and b
         # they are set to false by default
         g1 = gensym("test1")
@@ -138,7 +138,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
                 # let the parser figure out the best typing
                 expr = var
             end
-                
+
             push!(info.assignments, (expr, :($g1 ? $val1 : $val2)))
         end
 
@@ -162,7 +162,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         ### info.guards
 
         # TODO: disallow guards from info1, info2?
-        append!(info.guards, info1.guards) 
+        append!(info.guards, info1.guards)
         append!(info.guards, info2.guards)
 
         info
@@ -175,12 +175,12 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             typ = eval(current_module(), expr.args[1])
             parms = expr.args[2:end]
             fields = names(typ)
-            
+
             if length(fields) < length(parms)
                 error("Too many parameters specified for type $typ")
             end
 
-            if (length(parms) == 0 || !any([isexpr(p, :(...)) for p in parms])) && 
+            if (length(parms) == 0 || !any([isexpr(p, :(...)) for p in parms])) &&
                     length(fields) > length(parms)
                 error("Not matching against all parameters of $typ")
             end
@@ -226,12 +226,12 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, guardsyms, valsyms, 
+function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
     # end
-    
+
     seen_dots = false
     for i = 1:length(exprs)
         if isexpr(exprs[i], :(...))
@@ -254,7 +254,7 @@ end
 
 # Match arrays against arrays
 
-function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms, 
+function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     if isexpr(es[1], :(...))
         sym = array_type_of(es[1].args[1])
@@ -272,12 +272,12 @@ function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
     end
 end
 
-unapply(vals::Tuple, exprs::Tuple, syms, guardsyms, valsyms, 
-        info, array_checked::Bool=false) = 
+unapply(vals::Tuple, exprs::Tuple, syms, guardsyms, valsyms,
+        info, array_checked::Bool=false) =
     unapply([vals...], [exprs...], syms, guardsyms, valsyms, info, array_checked)
 
 # fallback
-function unapply(val, expr, _1, _2, _3, 
+function unapply(val, expr, _1, _2, _3,
                  info, array_checked::Bool=false)
     push!(info.tests, :(Match.ismatch($expr, $val)))
     info
@@ -299,7 +299,7 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
     sdim = :($dim+max(ndims($val)-2,0))
 
     if !array_checked #!(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
-        # if we recursively called this with subslicedim (below), 
+        # if we recursively called this with subslicedim (below),
         # don't do these checks
         # TODO: if there are nested arrays in the match, these checks
         #       should actually be done!
@@ -359,14 +359,14 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
 
         syms = getvars(pattern)
         valsyms = getvars(value, true)
-        
+
         info = unapply(v, pattern, syms, guardsyms, valsyms, info)
 
         # Create let statement for guards, and add it to tests
         if length(info.guards) > 0
             guard_expr = joinexprs(info.guards, :&&)
 
-            #guard_assignments = filter(a->(getvar(a[1]) in guardsyms), 
+            #guard_assignments = filter(a->(getvar(a[1]) in guardsyms),
             #                           info.assignments)
             guard_assignment_exprs = Expr[:($expr = $val) for (expr, val) in info.guard_assignments]
 
@@ -376,7 +376,7 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
         end
 
         # filter and escape regular let assignments
-        # assignments = filter(assn->(sym = assn[1]; 
+        # assignments = filter(assn->(sym = assn[1];
         #                             isa(sym, Symbol) && sym in syms ||
         #                             isexpr(sym, :(::)) && sym.args[1] in syms),
         #                      info.assignments)
@@ -421,7 +421,7 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
     else
         error("@match patterns must consist of :(=>) blocks")
     end
-end        
+end
 
 # The match macro
 macro match(v, m)
