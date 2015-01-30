@@ -1,5 +1,6 @@
 using Match
 using Base.Test
+using Compat
 
 require("testtypes.jl")
 
@@ -14,7 +15,7 @@ test1(item) = @match item begin
     _                    => "Something unexpected"
 end
 
-d = (Int=>String)[1=>"a",2=>"b"]
+d = @compat Dict{Int,String}(1=>"a",2=>"b")
 
 @test test1(66)     == "Integers are awesome!"
 @test test1("abc")  == "Strings are the best"
@@ -241,7 +242,7 @@ m = reshape([1:8], (2,2,2))
 # match against an expression
 function get_args(ex::Expr)
     @match ex begin
-        Expr(:call, {:+, args...}, _) => args
+        Expr(:call, [:+, args...], _) => args
         _ => "None"
     end
 end
