@@ -10,12 +10,12 @@ using Compat
 ismatch(r,s) = (r == s)
 
 #
-# subslicedim
+# viewdim
 #
 # "sub" version of slicedim, to get an array slice as a view
 
-function subslicedim{T<:AbstractArray}(A::T, d::Integer, i::Integer)
-    if d < 1 || d > ndims(A)
+function viewdim(A::AbstractArray, d::Integer, i::Integer)
+    if (d < 1) | (d > ndims(A))
         throw(BoundsError())
     end
     sz = size(A)
@@ -31,20 +31,31 @@ function subslicedim{T<:AbstractArray}(A::T, d::Integer, i::Integer)
     end
 end
 
-function subslicedim{T<:AbstractArray}(A::T, d::Integer, i)
-    if d < 1 || d > ndims(A)
+function viewdim(A::AbstractArray, d::Integer, i)
+    if (d < 1) | (d > ndims(A))
         throw(BoundsError())
     end
     sz = size(A)
     sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
 end
 
-subslicedim{T<:AbstractVector}(A::T, d::Integer, i::Integer) =
-    (if d < 0 || d > 1;  throw(BoundsError()) end;  A[i])
+viewdim(A::AbstractVector, d::Integer, i::Integer) =
+    (if (d < 0) | (d > 1);  throw(BoundsError()) end;  A[i])
 
-subslicedim{T<:AbstractVector}(A::T, d::Integer, i) =
-    (if d < 0 || d > 1;  throw(BoundsError()) end;  sub(A, i))
+viewdim(A::AbstractVector, d::Integer, i) =
+    (if (d < 0) | (d > 1);  throw(BoundsError()) end;  sub(A, i))
 
+# function viewdim2(A::AbstractArray, s::Integer, i::Integer, from_end::Bool = false)
+#     d = s + max(ndims(A)-2, 0)
+#     from_end && i = size(A,d)-i
+#     viewdim(A, d, i)
+# end
+
+# function viewdim2(A::AbstractArray, s::Integer, i::Integer, j::Integer)
+#     d = s + max(ndims(A)-2, 0)
+#     j = size(A,d)-j # this is the distance from the end of the dim size
+#     viewdim(A, d, i:j)
+# end
 #
 # getvars
 #
@@ -55,13 +66,7 @@ getvars(e::Symbol,all=false) = @compat startswith(string(e),'@') ? Symbol[] : Sy
 
 function getvars(e::Expr, all=false)
     if isexpr(e, :call)
-        if (arg1isa(e, Type) || arg1isa(e, Regex)) && length(e.args) > 1
-            getvars(e.args[2:end], all)
-        elseif all
-            getvars(e.args, all)
-        else
-            Symbol[]
-        end
+        getvars(e.args[2:end], all)
     elseif isexpr(e, :copyast) || isexpr(e, :quote)
         Symbol[]
     else
@@ -83,7 +88,7 @@ getvar(x::Symbol) = x
 #
 # checks if expr.arg[1] is a Type
 
-arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
+#arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 
 
 #
@@ -93,11 +98,27 @@ arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
 
 function check_dim_size_expr(val, dim, ex::Expr)
     if length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
-        :($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
+        #:($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
+        :(Match.checkdims($val, $dim, $(length(ex.args))))
     else
-        :($dim <= ndims($val) && size($val, $dim) >= $(length(ex.args)-1))
+        #:($dim <= ndims($val) && size($val, $dim) >= $(length(ex.args)-1))
+        :(Match.checkdims2($val, $dim, $(length(ex.args))))
     end
 end
+
+function checkdims(val::AbstractArray, dim, dimsize)
+    dim = dim + max(ndims(val)-2, 0)
+    dim <= ndims(val) && size(val, dim) == dimsize
+end
+
+checkdims(val, dim, dimsize) = false
+
+function checkdims2(val::AbstractArray, dim, dimsize)
+    dim = dim + max(ndims(val)-2, 0)
+    dim <= ndims(val) && size(val, dim) >= dimsize
+end
+
+checkdims2(val, dim, dimsize) = false
 
 
 #

@@ -38,14 +38,13 @@ function unapply(val, sym::Symbol, syms, guardsyms, valsyms, info, array_checked
 #         push!(info.tests, :(Match.ismatch($sym, $val)))
 
 # Symbol in syms
-    if sym in syms && ((inguard = (sym in guardsyms)) | (inval = (sym in valsyms)))
-        inguard && push!(info.guard_assignments, (sym, val))
-        inval   && push!(info.assignments, (sym, val))
+    if sym in syms
+        (sym in guardsyms) && push!(info.guard_assignments, (sym, val))
+        (sym in valsyms)   && push!(info.assignments, (sym, val))
 
 # Constants
-    elseif isdefined(current_module(),sym) # module global
-        typ = typeof(eval(current_module(),sym))
-        typ != Function && push!(info.tests, :(Match.ismatch($sym,$val)))
+    else
+        push!(info.tests, :(Match.ismatch($sym,$val)))
     end
 
     info
@@ -54,7 +53,7 @@ end
 function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
 # Array/tuple matching
-    if isexpr(expr, :vcat) || isexpr(expr, :hcat) || isexpr(expr, :hvcat) || isexpr(expr, :cell1d)
+    if isexpr(expr, :vcat) | isexpr(expr, :hcat) | isexpr(expr, :hvcat) | isexpr(expr, :cell1d) | isexpr(expr, :vect)
         unapply_array(val, expr, syms, guardsyms, valsyms, info)
 
     elseif isexpr(expr, :row)
@@ -74,18 +73,14 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         info
 
 # Match x::Type
-    elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol) # && isa(eval(current_module(), expr.args[2]), Type)
+    elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol)
         typ = expr.args[2]
         sym = expr.args[1]
 
-        if isconst(sym) && !isa(eval(sym), Function)
-            push!(info.tests, :(Match.ismatch($val, $expr)))
-        else
-            push!(info.tests, :(isa($val, $typ)))
-            if sym in syms
-                sym in guardsyms && push!(info.guard_assignments, (expr, val))
-                sym in valsyms   && push!(info.assignments, (expr, val))
-            end
+        push!(info.tests, :(isa($val, $typ)))
+        if sym in syms
+            sym in guardsyms && push!(info.guard_assignments, (expr, val))
+            sym in valsyms   && push!(info.assignments, (expr, val))
         end
 
         info
@@ -172,46 +167,39 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
 # Match calls (or anything resembling a call)
     elseif isexpr(expr, :call)
 
-    # Match Type constructors
-        if arg1isa(expr, Type) # isa(eval(current_module(), expr.args[1]), Type)
-            typ = eval(current_module(), expr.args[1])
-            parms = expr.args[2:end]
-            fields = names(typ)
-
-            if length(fields) < length(parms)
-                error("Too many parameters specified for type $typ")
-            end
-
-            if (length(parms) == 0 || !any([isexpr(p, :(...)) for p in parms])) &&
-                    length(fields) > length(parms)
-                error("Not matching against all parameters of $typ")
-            end
-
-            push!(info.tests, :(isa($val, $typ)))
-            dotvars = Expr[:($val.($(Expr(:quote, var)))) for var in fields]
-
-            unapply(dotvars, parms, syms, guardsyms, valsyms, info, array_checked)
-
-    # Match Regex "calls"
-        elseif arg1isa(expr, Regex)
-            m = gensym("m")
-            re = expr.args[1]
-            parms = expr.args[2:end]
-
-            push!(info.tests, :($m = match($re, $val); $m != nothing))
-            # TODO: test number of captures against length of parms?
-
-            if length(parms) > 0
-                unapply(:($m.captures), parms, syms, guardsyms, valsyms, info, array_checked)
-            else
-                info
-            end
-        else
-    # Other calls: evaluate the expression and test for equality
-            # TODO: test me!
+        # Match Type constructors
+        if length(syms) == 0
             push!(info.tests, :(Match.ismatch($expr, $val)))
             info
+        else
+            # Assume this is a type
+            typ = expr.args[1]
+            parms = expr.args[2:end]
+
+            push!(info.tests, :(isa($val, $typ)))
+            # TODO: this verifies the that the number of fields is correct.
+            #       We might want to force an error (e.g., by using an assert) instead.
+            push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
+            dotnums = Expr[:($val.($i)) for i in 1:length(expr.args)-1]
+
+            unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
         end
+
+    # # Match Regex "calls"
+    #     elseif arg1isa(expr, Regex)
+    #         m = gensym("m")
+    #         re = expr.args[1]
+    #         parms = expr.args[2:end]
+
+    #         push!(info.tests, :($m = match($re, $val); $m != nothing))
+    #         # TODO: test number of captures against length of parms?
+
+    #         if length(parms) > 0
+    #             unapply(:($m.captures), parms, syms, guardsyms, valsyms, info, array_checked)
+    #         else
+    #             info
+    #         end
+    #     end
 
 # Regex strings (r"[a-z]*")
     elseif isexpr(expr, :macrocall) && expr.args[1] == symbol("@r_str")
@@ -290,9 +278,10 @@ end
 
 function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
-    if isexpr(expr, :vcat) || isexpr(expr, :cell1d)
+    if isexpr(expr, :vcat) || isexpr(expr, :cell1d) || isexpr(expr, :vect)
         dim = 1
-    elseif isexpr(expr, :hcat)
+    elseif isexpr(expr, :hcat) # || isexpr(expr, :hvcat)
+        # TODO: check hvcat...
         dim = 2
     else
         error("unapply_array() called on a non-array expression")
@@ -306,8 +295,10 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
         # TODO: if there are nested arrays in the match, these checks
         #       should actually be done!
         # TODO: need to make this test more robust if we're only doing it once...
-        push!(info.tests, :(isa($val, AbstractArray)))
-        push!(info.tests, check_dim_size_expr(val, sdim, expr))
+
+        #push!(info.tests, :(isa($val, AbstractArray)))
+        #push!(info.tests, check_dim_size_expr(val, sdim, expr))
+        push!(info.tests, check_dim_size_expr(val, dim, expr))
         array_checked=true
     end
 
@@ -324,13 +315,13 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
                 end
                 seen_dots = true
                 sym = array_type_of(exprs[i].args[1])
-                s = :(Match.subslicedim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i))))
+                s = :(Match.viewdim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i))))
                 unapply(s, sym, syms, guardsyms, valsyms, info, array_checked)
             elseif seen_dots
-                s = :(Match.subslicedim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i))))
+                s = :(Match.viewdim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i))))
                 unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             else
-                s = :(Match.subslicedim($val, $sdim, $i))
+                s = :(Match.viewdim($val, $sdim, $i))
                 unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             end
         end
