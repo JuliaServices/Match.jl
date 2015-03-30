@@ -315,13 +315,15 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
                 end
                 seen_dots = true
                 sym = array_type_of(exprs[i].args[1])
-                s = :(Match.viewdim($val, $sdim, $i:(size($val,$sdim)-$(length(exprs)-i))))
+                j = length(exprs)-i
+                s = :(Match.slicedim($val, $dim, $i, $j))
                 unapply(s, sym, syms, guardsyms, valsyms, info, array_checked)
             elseif seen_dots
-                s = :(Match.viewdim($val, $sdim, (size($val,$sdim)-$(length(exprs)-i))))
+                j = length(exprs)-i
+                s = :(Match.slicedim($val, $dim, $j, true))
                 unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             else
-                s = :(Match.viewdim($val, $sdim, $i))
+                s = :(Match.slicedim($val, $dim, $i))
                 unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             end
         end

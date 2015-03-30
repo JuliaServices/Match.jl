@@ -2,6 +2,7 @@
 # author: Kevin Squire (@kmsquire)
 
 using Compat
+import ArrayViews.view
 
 #
 # Fallback for ismatch
@@ -10,52 +11,52 @@ using Compat
 ismatch(r,s) = (r == s)
 
 #
-# viewdim
+# slicedim
 #
 # "sub" version of slicedim, to get an array slice as a view
 
-function viewdim(A::AbstractArray, d::Integer, i::Integer)
+function _slicedim(A::AbstractArray, d::Integer, i::Integer)
     if (d < 1) | (d > ndims(A))
         throw(BoundsError())
     end
     sz = size(A)
     # Force 1x..x1 slices to extract the value
-    # TODO: Note that this is no longer a reference.
-    #       There should be a better fix...
+    # Note that this is no longer a reference.
     otherdims = [sz...]
     splice!(otherdims, d)
     if all(otherdims .== 1)
         A[[ n==d ? i : 1 for n in 1:ndims(A) ]...]
     else
-        sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+        view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
     end
 end
 
-function viewdim(A::AbstractArray, d::Integer, i)
+function _slicedim(A::AbstractArray, d::Integer, i)
     if (d < 1) | (d > ndims(A))
         throw(BoundsError())
     end
     sz = size(A)
-    sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+    view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
 end
 
-viewdim(A::AbstractVector, d::Integer, i::Integer) =
+_slicedim(A::AbstractVector, d::Integer, i::Integer) =
     (if (d < 0) | (d > 1);  throw(BoundsError()) end;  A[i])
 
-viewdim(A::AbstractVector, d::Integer, i) =
+_slicedim(A::AbstractVector, d::Integer, i) =
     (if (d < 0) | (d > 1);  throw(BoundsError()) end;  sub(A, i))
 
-# function viewdim2(A::AbstractArray, s::Integer, i::Integer, from_end::Bool = false)
-#     d = s + max(ndims(A)-2, 0)
-#     from_end && i = size(A,d)-i
-#     viewdim(A, d, i)
-# end
+function slicedim(A::AbstractArray, s::Integer, i::Integer, from_end::Bool = false)
+    d = s + max(ndims(A)-2, 0)
+    from_end && (i = size(A,d)-i)
+    _slicedim(A, d, i)
+end
 
-# function viewdim2(A::AbstractArray, s::Integer, i::Integer, j::Integer)
-#     d = s + max(ndims(A)-2, 0)
-#     j = size(A,d)-j # this is the distance from the end of the dim size
-#     viewdim(A, d, i:j)
-# end
+function slicedim(A::AbstractArray, s::Integer, i::Integer, j::Integer)
+    d = s + max(ndims(A)-2, 0)
+    j = size(A,d)-j # this is the distance from the end of the dim size
+    _slicedim(A, d, i:j)
+end
+
 #
 # getvars
 #
