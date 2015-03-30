@@ -197,8 +197,8 @@ end
 @assert @match([1:4;], [a,b...,c])                           == (1,[2,3],4)
 
 # match particular values at the beginning of a vector
-@assert @match([1:10;], [1,2,a...])                          == [3:10]
-@assert @match([1:10;], [1,a...,9,10])                       == [2:8]
+@assert @match([1:10;], [1,2,a...])                          == [3:10;]
+@assert @match([1:10;], [1,a...,9,10])                       == [2:8;]
 
 # match / collect columns
 @assert @match([1 2 3; 4 5 6], [a b...])                    == ([1,4] , [2 3; 5 6])
@@ -235,7 +235,7 @@ end
                  d 18 19 20])                               == ([2 3 4], [5 6 7 8; 9 10 11 12], [13 14], 17)
 
 # match 3D arrays
-m = reshape([1:8], (2,2,2))
+m = reshape([1:8;], (2,2,2))
 @assert @match(m, [a b])                                    == ([1 3; 2 4], [5 7; 6 8])
 @assert @match(m, [[1 a; b c] d])                           == (3,2,4,[5 7; 6 8])
 

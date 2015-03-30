@@ -175,11 +175,12 @@ are preceded by a comma and end with "end"::
 Regular Expressions
 -------------------
 
-Match.jl used to have regular expression handling, but it was implemented
-using ``eval``, which is generally a bad idea and caused some problems.
+Match.jl used to have complex regular expression handling, but it was
+implemented using ``eval``, which is generally a bad idea and was the
+source of some undesirable behavior.
 
-With some work, it is possible to reimplement, but it's unclear if this is
-a good idea yet.
+With some work, it is possible to reimplement, but it's unclear if
+this is a good idea yet.
 
 .. rst-class:: strike
 

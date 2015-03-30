@@ -347,13 +347,13 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
             guard = pattern.args[2].args[1]
             pattern = pattern.args[1]
             push!(info.guards, guard)
-            guardsyms = getvars(guard, true)
+            guardsyms = getvars(guard)
         else
             guardsyms = Symbol[]
         end
 
         syms = getvars(pattern)
-        valsyms = getvars(value, true)
+        valsyms = getvars(value)
 
         info = unapply(v, pattern, syms, guardsyms, valsyms, info)
 

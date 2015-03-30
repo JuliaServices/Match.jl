@@ -60,21 +60,21 @@ end
 #
 # getvars
 #
-# get all symbols in an expression (including undefined symbols)
+# get all symbols in an expression
 
-getvars(e,all=false)         = Symbol[]
-getvars(e::Symbol,all=false) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
+getvars(e)         = Symbol[]
+getvars(e::Symbol) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
 
-function getvars(e::Expr, all=false)
+function getvars(e::Expr)
     if isexpr(e, :call)
-        getvars(e.args[2:end], all)
+        getvars(e.args[2:end])
     elseif isexpr(e, :copyast) || isexpr(e, :quote)
         Symbol[]
     else
-        getvars(e.args, all)
+        getvars(e.args)
     end
 end
-getvars(es::AbstractArray,all=false) = union([getvars(e,all) for e in es]...)
+getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
 
 #
 # getvar
