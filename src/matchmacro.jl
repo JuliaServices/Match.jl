@@ -106,10 +106,10 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         ### info.tests
 
         # assign g1, g2 during the test, if needed
-        expr1 = joinexprs(info1.tests, :&&, :true)
-        expr2 = joinexprs(info2.tests, :&&, :true)
-        if length(info1.assignments) > 0;  expr1 = :($(esc(g1)) = $expr1);  end
-        if length(info2.assignments) > 0;  expr2 = :($(esc(g2)) = $expr2);  end
+        expr1 = joinexprs(unique(info1.tests), :&&, :true)
+        expr2 = joinexprs(unique(info2.tests), :&&, :true)
+        if length(info1.assignments) > 0;  expr1 = :($g1 = $expr1);  end
+        if length(info2.assignments) > 0;  expr2 = :($g2 = $expr2);  end
 
         push!(info.tests, Expr(:(||), expr1, expr2))
 
@@ -139,18 +139,18 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.assignments, (expr, :($g1 ? $val1 : $val2)))
         end
 
-        for (expr, var) in info1.assignments
-            vs = getvar(x)
+        for (expr, val) in info1.assignments
+            vs = getvar(expr)
             if !(vs in sharedvars)
                 # here and below, we assign to nothing
                 # so the type info is removed
                 # TODO: move it to $val???
-                push!(info.assignments, (vs, :($g1 ? $val : nothing)))
+                push!(info.assignments, (expr, :($g1 ? $val : nothing)))
             end
         end
 
-        for (expr, var) in info2.assignments
-            vs = getvar(x)
+        for (expr, val) in info2.assignments
+            vs = getvar(expr)
             if !(vs in sharedvars)
                 push!(info.assignments, (expr, :($g2 ? $val : nothing)))
             end

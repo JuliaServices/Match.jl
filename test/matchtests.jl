@@ -239,8 +239,6 @@ m = reshape([1:8], (2,2,2))
 @assert @match(m, [a b])                                    == ([1 3; 2 4], [5 7; 6 8])
 @assert @match(m, [[1 a; b c] d])                           == (3,2,4,[5 7; 6 8])
 
-
-
 # match against an expression
 function get_args(ex::Expr)
     @match ex begin
@@ -250,3 +248,54 @@ function get_args(ex::Expr)
 end
 
 @assert get_args(Expr(:call, :+, :x, 1)) == [:x, 1]
+
+# Zach Allaun's fizzbuzz (https://github.com/zachallaun/Match.jl#awesome-fizzbuzz)
+
+function fizzbuzz(range::Range)
+    io = IOBuffer()
+    for n in range
+        @match (n%3, n%5) begin
+            (0,0) => print(io, "fizzbuzz ")
+            (0,_) => print(io, "fizz ")
+            (_,0) => print(io, "buzz ")
+            (_,_) => print(io, n, ' ')
+        end
+    end
+    takebuf_string(io)
+end
+
+@assert fizzbuzz(1:15) == "1 2 fizz 4 buzz fizz 7 8 fizz buzz 11 fizz 13 14 fizzbuzz "
+
+# Zach Allaun's "Balancing Red-Black Trees" (https://github.com/zachallaun/Match.jl#balancing-red-black-trees)
+
+abstract RBTree
+
+immutable Leaf <: RBTree
+end
+
+immutable Red <: RBTree
+    value
+    left::RBTree
+    right::RBTree
+end
+
+immutable Black <: RBTree
+    value
+    left::RBTree
+    right::RBTree
+end
+
+function balance(tree::RBTree)
+    @match tree begin
+        ( Black(z, Red(y, Red(x, a, b), c), d)
+         || Black(z, Red(x, a, Red(y, b, c)), d)
+         || Black(x, a, Red(z, Red(y, b, c), d))
+         || Black(x, a, Red(y, b, Red(z, c, d)))) => Red(y, Black(x, a, b),
+                                                         Black(z, c, d))
+        tree => tree
+    end
+end
+
+@assert balance(Black(1, Red(2, Red(3, Leaf(), Leaf()), Leaf()), Leaf())) == 
+            Red(2, Black(3, Leaf(), Leaf()),
+                Black(1, Leaf(), Leaf()))
