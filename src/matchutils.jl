@@ -116,7 +116,7 @@ checkdims(val, dim, dimsize) = false
 
 function checkdims2(val::AbstractArray, dim, dimsize)
     dim = dim + max(ndims(val)-2, 0)
-    dim <= ndims(val) && size(val, dim) >= dimsize
+    dim <= ndims(val) && size(val, dim) >= dimsize-1
 end
 
 checkdims2(val, dim, dimsize) = false
