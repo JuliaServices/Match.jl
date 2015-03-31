@@ -175,6 +175,15 @@ are preceded by a comma and end with "end"::
 Regular Expressions
 -------------------
 
+Match.jl used to have complex regular expression handling, but it was
+implemented using ``eval``, which is generally a bad idea and was the
+source of some undesirable behavior.
+
+With some work, it is possible to reimplement, but it's unclear if
+this is a good idea yet.
+
+.. rst-class:: strike
+
 Julia has regular expressions already, of course.  Match builds
 on them by allowing binding, by treating patterns like functions::
 
@@ -222,6 +231,8 @@ on them by allowing binding, by treating patterns like functions::
 
   julia> regex_test("Open the pod bay doors, HAL.")
   "No match"
+
+.. rst-class:: strike
 
 As noted in the comment above, matching against regular expressions in
 variables only works when the variables are global variables
