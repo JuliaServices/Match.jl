@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
+
 # Advanced Pattern Matching for Julia
 
 Scala has some of the most advanced pattern matching machinery.  This

@@ -85,24 +85,14 @@ getvar(x::Expr) = isexpr(x, :(::)) ? x.args[1] : x
 getvar(x::Symbol) = x
 
 #
-# arg1istype
-#
-# checks if expr.arg[1] is a Type
-
-#arg1isa(e::Expr, typ::Type) = isa(eval(current_module(), e.args[1]), typ)
-
-
-#
 # check_dim_size_expr
 #
 # generate an expression to check the size of a variable dimension against an array of expressions
 
 function check_dim_size_expr(val, dim, ex::Expr)
     if length(ex.args) == 0 || !any([isexpr(e, :(...)) for e in ex.args])
-        #:($dim <= ndims($val) && size($val, $dim) == $(length(ex.args)))
         :(Match.checkdims($val, $dim, $(length(ex.args))))
     else
-        #:($dim <= ndims($val) && size($val, $dim) >= $(length(ex.args)-1))
         :(Match.checkdims2($val, $dim, $(length(ex.args))))
     end
 end
