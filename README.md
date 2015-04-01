@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
+[![PkgEval](http://pkg.julialang.org/badges/Match_release.svg)](http://pkg.julialang.org/?pkg=Match&ver=release)
 
 # Advanced Pattern Matching for Julia
 
