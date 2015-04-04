@@ -1,5 +1,7 @@
 using Compat
 
+use_fieldnames = VERSION >= v"0.4.0-dev+3609"
+
 ### Match Expression Info
 
 immutable MatchExprInfo
@@ -11,7 +13,6 @@ immutable MatchExprInfo
 end
 
 MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
-
 
 ## unapply(val, expr, syms, guardsyms, valsyms, info)
 ##
@@ -179,7 +180,12 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.tests, :(isa($val, $typ)))
             # TODO: this verifies the that the number of fields is correct.
             #       We might want to force an error (e.g., by using an assert) instead.
-            push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
+            if use_fieldnames
+                push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
+            else
+                push!(info.tests, :(length(names($typ)) == $(length(expr.args)-1)))
+            end
+
             dotnums = Expr[:($val.($i)) for i in 1:length(expr.args)-1]
 
             unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
