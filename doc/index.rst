@@ -198,7 +198,7 @@ against ranges is also supported::
   julia> num_match('c')
   "something else"
 
-Note that a range can still match another range exactly:
+Note that a range can still match another range exactly::
 
   julia> num_match(3:10)
   "three to ten"
