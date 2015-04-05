@@ -53,14 +53,33 @@ end
 
 function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked::Bool=false)
 
-# Array/tuple matching
-    if isexpr(expr, :vcat) | isexpr(expr, :hcat) | isexpr(expr, :hvcat) | isexpr(expr, :cell1d) | isexpr(expr, :vect)
-        unapply_array(val, expr, syms, guardsyms, valsyms, info)
+# Match calls (or anything resembling a call)
+    if isexpr(expr, :call)
 
-    elseif isexpr(expr, :row)
-        # pretend it's :hcat
-        unapply_array(val, Expr(:hcat, expr.args...), syms, guardsyms, valsyms, info)
+        # Match Type constructors
+        if length(syms) == 0
+            push!(info.tests, :(Match.ismatch($expr, $val)))
+            info
+        else
+            # Assume this is a type
+            typ = expr.args[1]
+            parms = expr.args[2:end]
 
+            push!(info.tests, :(isa($val, $typ)))
+            # TODO: this verifies the that the number of fields is correct.
+            #       We might want to force an error (e.g., by using an assert) instead.
+            if use_fieldnames
+                push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
+            else
+                push!(info.tests, :(length(names($typ)) == $(length(expr.args)-1)))
+            end
+
+            dotnums = Expr[:($val.($i)) for i in 1:length(expr.args)-1]
+
+            unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
+        end
+
+# Tuple matching
     elseif isexpr(expr, :tuple)
         if isexpr(val, :tuple)
             check_tuple_len(val, expr)
@@ -73,18 +92,12 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
 
         info
 
-# Match x::Type
-    elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol)
-        typ = expr.args[2]
-        sym = expr.args[1]
+    elseif isexpr(expr, :vcat) | isexpr(expr, :hcat) | isexpr(expr, :hvcat) | isexpr(expr, :cell1d) | isexpr(expr, :vect)
+        unapply_array(val, expr, syms, guardsyms, valsyms, info)
 
-        push!(info.tests, :(isa($val, $typ)))
-        if sym in syms
-            sym in guardsyms && push!(info.guard_assignments, (expr, val))
-            sym in valsyms   && push!(info.assignments, (expr, val))
-        end
-
-        info
+    elseif isexpr(expr, :row)
+        # pretend it's :hcat
+        unapply_array(val, Expr(:hcat, expr.args...), syms, guardsyms, valsyms, info)
 
 # Match a || b (i.e., match either expression)
     elseif isexpr(expr, :(||))
@@ -165,47 +178,18 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
 
         info
 
-# Match calls (or anything resembling a call)
-    elseif isexpr(expr, :call)
+# Match x::Type
+    elseif isexpr(expr, :(::)) && isa(expr.args[1], Symbol)
+        typ = expr.args[2]
+        sym = expr.args[1]
 
-        # Match Type constructors
-        if length(syms) == 0
-            push!(info.tests, :(Match.ismatch($expr, $val)))
-            info
-        else
-            # Assume this is a type
-            typ = expr.args[1]
-            parms = expr.args[2:end]
-
-            push!(info.tests, :(isa($val, $typ)))
-            # TODO: this verifies the that the number of fields is correct.
-            #       We might want to force an error (e.g., by using an assert) instead.
-            if use_fieldnames
-                push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
-            else
-                push!(info.tests, :(length(names($typ)) == $(length(expr.args)-1)))
-            end
-
-            dotnums = Expr[:($val.($i)) for i in 1:length(expr.args)-1]
-
-            unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
+        push!(info.tests, :(isa($val, $typ)))
+        if sym in syms
+            sym in guardsyms && push!(info.guard_assignments, (expr, val))
+            sym in valsyms   && push!(info.assignments, (expr, val))
         end
 
-    # # Match Regex "calls"
-    #     elseif arg1isa(expr, Regex)
-    #         m = gensym("m")
-    #         re = expr.args[1]
-    #         parms = expr.args[2:end]
-
-    #         push!(info.tests, :($m = match($re, $val); $m != nothing))
-    #         # TODO: test number of captures against length of parms?
-
-    #         if length(parms) > 0
-    #             unapply(:($m.captures), parms, syms, guardsyms, valsyms, info, array_checked)
-    #         else
-    #             info
-    #         end
-    #     end
+        info
 
 # Regex strings (r"[a-z]*")
     elseif isexpr(expr, :macrocall) && expr.args[1] == symbol("@r_str")
@@ -367,8 +351,6 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
         if length(info.guards) > 0
             guard_expr = joinexprs(info.guards, :&&)
 
-            #guard_assignments = filter(a->(getvar(a[1]) in guardsyms),
-            #                           info.assignments)
             guard_assignment_exprs = Expr[:($expr = $val) for (expr, val) in info.guard_assignments]
 
             guard_tests = let_expr(guard_expr, guard_assignment_exprs)

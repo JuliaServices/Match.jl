@@ -190,7 +190,7 @@ end
 
 # Pattern extraction from arrays
 
-# extract first, rest from array 
+# extract first, rest from array
 # (b is a subarray of the original array)
 @assert @match([1:4;], [a,b...])                             == (1,[2,3,4])
 @assert @match([1:4;], [a...,b])                             == ([1,2,3],4)
@@ -223,15 +223,15 @@ end
 @assert @match([1 2; 3 4], [1 a; b c])                      == (2,3,4)
 @assert @match([1 2; 3 4], [1 a; b...])                     == (2,[3 4])
 
-@assert @match([ 1  2  3  4 
-                 5  6  7  8 
+@assert @match([ 1  2  3  4
+                 5  6  7  8
                  9 10 11 12
                 13 14 15 16
-                17 18 19 20 ], 
+                17 18 19 20 ],
 
                 [1      a...
-                 b... 
-                 c... 15 16 
+                 b...
+                 c... 15 16
                  d 18 19 20])                               == ([2 3 4], [5 6 7 8; 9 10 11 12], [13 14], 17)
 
 # match 3D arrays
@@ -296,6 +296,23 @@ function balance(tree::RBTree)
     end
 end
 
-@assert balance(Black(1, Red(2, Red(3, Leaf(), Leaf()), Leaf()), Leaf())) == 
+@assert balance(Black(1, Red(2, Red(3, Leaf(), Leaf()), Leaf()), Leaf())) ==
             Red(2, Black(3, Leaf(), Leaf()),
                 Black(1, Leaf(), Leaf()))
+
+
+function num_match(n)
+    @match n begin
+        0      => "zero"
+        1 || 2 => "one or two"
+        3:10   => "three to ten"
+        _      => "something else"
+    end
+end
+
+@assert num_match(0) == "zero"
+@assert num_match(2) == "one or two"
+@assert num_match(4) == "three to ten"
+@assert num_match(12) == "something else"
+@assert num_match("hi") == "something else"
+@assert num_match('c') == "something else"

@@ -2,18 +2,19 @@
 # author: Kevin Squire (@kmsquire)
 
 using Compat
-import ArrayViews.view
 
 #
-# Fallback for ismatch
+# ismatch
 #
 
-ismatch(r,s) = (r == s)
+Base.ismatch{R<:Number}(r::Range{R}, s::Number) = s in r
+Base.ismatch{T}(r::Range{T}, s::T) = s in r
+Base.ismatch(r,s) = (r == s)
 
 #
 # slicedim
 #
-# "sub" version of slicedim, to get an array slice as a view
+# "sub" version of slicedim
 
 function _slicedim(A::AbstractArray, d::Integer, i::Integer)
     if (d < 1) | (d > ndims(A))
@@ -27,7 +28,7 @@ function _slicedim(A::AbstractArray, d::Integer, i::Integer)
     if all(otherdims .== 1)
         A[[ n==d ? i : 1 for n in 1:ndims(A) ]...]
     else
-        view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+        sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
     end
 end
 
@@ -36,7 +37,7 @@ function _slicedim(A::AbstractArray, d::Integer, i)
         throw(BoundsError())
     end
     sz = size(A)
-    view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+    sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
 end
 
 _slicedim(A::AbstractVector, d::Integer, i::Integer) =

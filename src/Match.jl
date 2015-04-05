@@ -4,8 +4,6 @@ using Base.Meta
 
 export @match, @ismatch
 
-import Base.ismatch
-
 include("matchutils.jl")
 include("matchmacro.jl")
 

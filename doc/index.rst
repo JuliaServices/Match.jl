@@ -40,7 +40,7 @@ It is possible to supply variables inside pattern, which will be bound
 to corresponding values.  This and other features are best seen with
 examples.
 
-Match values
+Match Values
 ------------
 
 The easiest kind of matching to use is simply to match against values::
@@ -51,14 +51,12 @@ The easiest kind of matching to use is simply to match against values::
      _ => "Something else..."
 
 
-Match types
+Match Types
 -----------
 
 Julia already does a great job of this with functions and multiple
 dispatch, and it is generally be better to use those mechanisms when
 possible.  But it can be done here::
-
-  julia> using Match
 
   julia> matchtype(item) = @match item begin
              n::Int               => println("Integers are awesome!")
@@ -170,6 +168,40 @@ are preceded by a comma and end with "end"::
 
   julia> parse_arg("--help")
   Help!
+
+
+Match Ranges (new in Match.jl v0.1.4)
+------------
+
+Borrowing a nice idea from pattern matching in Rust, pattern matching
+against ranges is also supported::
+
+  julia> function num_match(n)
+             @match n begin
+                 0      => "zero"
+                 1 || 2 => "one or two"
+                 3:10   => "three to ten"
+                 _      => "something else"
+             end
+         end
+  num_match (generic function with 1 method)
+
+  julia> num_match(0)
+  "zero"
+
+  julia> num_match(2)
+  "one or two"
+
+  julia> num_match(12)
+  "something else"
+
+  julia> num_match('c')
+  "something else"
+
+Note that a range can still match another range exactly:
+
+  julia> num_match(3:10)
+  "three to ten"
 
 
 Regular Expressions
