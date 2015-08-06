@@ -49,6 +49,7 @@ The easiest kind of matching to use is simply to match against values::
      1 => "one"
      2 => "two"
      _ => "Something else..."
+  end     
 
 
 Match Types
