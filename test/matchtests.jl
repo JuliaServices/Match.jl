@@ -316,3 +316,11 @@ end
 @assert num_match(12) == "something else"
 @assert num_match("hi") == "something else"
 @assert num_match('c') == "something else"
+
+
+# Interpolation of matches in quoted expressions
+test_interp(item) = @match item begin
+    [a, b] => :($a + $b)
+end
+@assert test_interp([1, 2]) == :(1 + 2)
+
