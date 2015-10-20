@@ -206,7 +206,7 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, guardsyms, valsyms,
+function unapply(val::Union{Symbol, Expr}, exprs::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
