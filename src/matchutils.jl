@@ -69,8 +69,6 @@ getvars(e::Symbol) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
 function getvars(e::Expr)
     if isexpr(e, :call)
         getvars(e.args[2:end])
-    elseif isexpr(e, :copyast) || isexpr(e, :quote)
-        Symbol[]
     else
         getvars(e.args)
     end
