@@ -1,5 +1,3 @@
-using Compat
-
 use_fieldnames = VERSION >= v"0.4.0-dev+3609"
 
 ### Match Expression Info
@@ -206,7 +204,7 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union(Symbol, Expr), exprs::AbstractArray, syms, guardsyms, valsyms,
+function unapply(val::Union{Symbol, Expr}, exprs::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
@@ -418,7 +416,7 @@ macro match(v, m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!@compat(startswith(string(x),"@")), syms)
+        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!startswith(string(x),"@"), syms)
         if length(vars) == 0
             code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
         elseif length(vars) == 1
@@ -442,4 +440,3 @@ end
 
 
 fismatch(val, m) = macroexpand(:(@ismatch $val $m))
-

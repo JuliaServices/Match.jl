@@ -1,8 +1,6 @@
 ### Utilities used by @match macro
 # author: Kevin Squire (@kmsquire)
 
-using Compat
-
 #
 # ismatch
 #
@@ -64,7 +62,7 @@ end
 # get all symbols in an expression
 
 getvars(e)         = Symbol[]
-getvars(e::Symbol) = @compat startswith(string(e),'@') ? Symbol[] : Symbol[e]
+getvars(e::Symbol) = startswith(string(e),'@') ? Symbol[] : Symbol[e]
 
 function getvars(e::Expr)
     if isexpr(e, :call)

@@ -1,6 +1,5 @@
 using Match
 using Base.Test
-using Compat
 
 require("testtypes.jl")
 
@@ -15,7 +14,7 @@ test1(item) = @match item begin
     _                    => "Something unexpected"
 end
 
-d = @compat Dict{Int,String}(1=>"a",2=>"b")
+d = Dict{Int,String}(1=>"a",2=>"b")
 
 @test test1(66)     == "Integers are awesome!"
 @test test1("abc")  == "Strings are the best"
@@ -323,4 +322,3 @@ test_interp(item) = @match item begin
     [a, b] => :($a + $b)
 end
 @assert test_interp([1, 2]) == :(1 + 2)
-
