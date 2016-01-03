@@ -4,14 +4,14 @@
 #
 
 type Address
-    street::String
-    city::String
-    zip::String
+    street::AbstractString
+    city::AbstractString
+    zip::AbstractString
 end
 
 type Person
-    firstname::String
-    lastname::String
+    firstname::AbstractString
+    lastname::AbstractString
     address::Address
 end
 
@@ -22,11 +22,11 @@ end
 abstract Term
 
 immutable Var <: Term
-    name::String
+    name::AbstractString
 end
 
 immutable Fun <: Term
-    arg::String
+    arg::AbstractString
     body::Term
 end
 
