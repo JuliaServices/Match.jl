@@ -508,9 +508,7 @@ Here are a couple of additional examples.
 Mathematica-Inspired Sparse Array Constructor
 ---------------------------------------------
 
-`Contributed by @benkj`__ .
-
-__ https://github.com/kmsquire/Match.jl/issues/29
+`Contributed by \@benkj <https://github.com/kmsquire/Match.jl/issues/29>`_
 
     I've realized that Match.jl is perfect for creating in julia an equivalent of SparseArray
     https://reference.wolfram.com/language/ref/SparseArray.html which I find quite useful in Mathematica.
