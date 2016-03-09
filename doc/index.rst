@@ -343,7 +343,7 @@ Match and collect rows
    7  8  9
 
 
-Match invidual positions
+Match individual positions
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
