@@ -1,6 +1,7 @@
 module Match
 
 using Base.Meta
+import Compat: String
 
 export @match, @ismatch
 

@@ -72,7 +72,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
                 push!(info.tests, :(length(names($typ)) == $(length(expr.args)-1)))
             end
 
-            dotnums = Expr[:($val.($i)) for i in 1:length(expr.args)-1]
+            dotnums = Expr[:(getfield($val, $i)) for i in 1:length(expr.args)-1]
 
             unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
         end
