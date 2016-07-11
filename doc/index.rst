@@ -73,7 +73,7 @@ possible.  But it can be done here::
   julia> matchtype("abc")
   Strings are the best
 
-  julia> matchtype((Int=>String)[1=>"a",2=>"b"])
+  julia> matchtype(Dict{Int, String}(1=>"a",2=>"b"))
   Ints for Strings?
 
   julia> matchtype(Dict())
@@ -423,7 +423,7 @@ There are a few useful things to be aware of when using Match.
     ## Bad
     julia> _iseven(a) = @match a begin
               n::Int if n%2 == 0 end => println("$n is even")
-              m::Int                  => println("$m is odd")
+              m::Int                 => println("$m is odd")
            end
     ERROR: syntax: extra token "if" after end of expression
 
@@ -479,26 +479,25 @@ There are a few useful things to be aware of when using Match.
   used, "_" will not be assigned.
 
 * If you want to see the code generated for a macro, you can use
-  `Match.fmatch`, passing in quoted expressions::
+  `macroexpand`::
 
-      julia> Match.fmatch(:a, :(begin
-                 n::Int           => "Integer"
-		 m::FloatingPoint => "Float"
-	     end))
-      quote  # none, line 2:
-	  if isa(a,Int) # line 377:
-	      "Integer"
-	  else  # /home/kmsquire/.julia/v0.2/Match/src/matchmacro.jl, line 379:
-	      begin  # line 3:
-		  if isa(a,FloatingPoint) # line 377:
-		      "Float"
-		  else  # /home/kmsquire/.julia/v0.2/Match/src/matchmacro.jl, line 379:
-		      nothing
-		  end
-	      end
-	  end
+      julia> macroexpand(:(@match(a, begin
+                              n::Int           => "Integer"
+		                          m::FloatingPoint => "Float"
+	                        end))
+      quote  # REPL[1], line 2:
+          if isa(a,Int) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
+              "Integer"
+          else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
+              begin  # REPL[1], line 3:
+                  if isa(a,FloatingPoint) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
+                      "Float"
+                  else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
+                      nothing
+                  end
+              end
+          end
       end
-
 
 Examples
 ========
