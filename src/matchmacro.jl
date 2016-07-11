@@ -128,8 +128,8 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         ### info.assignments
 
         # fix up let assignments to determine which variables to match
-        vars1 = [getvar(x) => (x,y) for (x,y) in info1.assignments]
-        vars2 = [getvar(x) => (x,y) for (x,y) in info2.assignments]
+        vars1 = Dict(getvar(x) => (x,y) for (x,y) in info1.assignments)
+        vars2 = Dict(getvar(x) => (x,y) for (x,y) in info2.assignments)
 
         sharedvars = intersect(keys(vars1), keys(vars2))
 
@@ -246,7 +246,7 @@ function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
 
     else
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
-        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
+        unapply(view(vs,2:length(vs)), view(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
     end
 end
 

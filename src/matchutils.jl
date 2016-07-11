@@ -14,7 +14,7 @@ Base.ismatch(r,s) = (r == s)
 #
 # slicedim
 #
-# "sub" version of slicedim
+# "view" version of slicedim
 
 function _slicedim(A::AbstractArray, d::Integer, i::Integer)
     if (d < 1) | (d > ndims(A))
@@ -28,7 +28,7 @@ function _slicedim(A::AbstractArray, d::Integer, i::Integer)
     if all(otherdims .== 1)
         A[[ n==d ? i : 1 for n in 1:ndims(A) ]...]
     else
-        sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+        view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
     end
 end
 
@@ -37,14 +37,14 @@ function _slicedim(A::AbstractArray, d::Integer, i)
         throw(BoundsError())
     end
     sz = size(A)
-    sub(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
+    view(A, [ n==d ? i : (1:sz[n]) for n in 1:ndims(A) ]...)
 end
 
 _slicedim(A::AbstractVector, d::Integer, i::Integer) =
     (if (d < 0) | (d > 1);  throw(BoundsError()) end;  A[i])
 
 _slicedim(A::AbstractVector, d::Integer, i) =
-    (if (d < 0) | (d > 1);  throw(BoundsError()) end;  sub(A, i))
+    (if (d < 0) | (d > 1);  throw(BoundsError()) end;  view(A, i))
 
 function slicedim(A::AbstractArray, s::Integer, i::Integer, from_end::Bool = false)
     d = s + max(ndims(A)-2, 0)
@@ -145,7 +145,7 @@ function joinexprs(exprs::AbstractArray, oper::Symbol, default=:nothing)
 
     len == 0 ? default :
     len == 1 ? exprs[1] :
-               Expr(oper, joinexprs(sub(exprs, 1:(len-1)), oper, default), exprs[end])
+               Expr(oper, joinexprs(view(exprs, 1:(len-1)), oper, default), exprs[end])
 end
 
 
