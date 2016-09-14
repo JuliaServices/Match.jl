@@ -1,5 +1,3 @@
-use_fieldnames = VERSION >= v"0.4.0-dev+3609"
-
 ### Match Expression Info
 
 immutable MatchExprInfo
@@ -66,11 +64,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.tests, :(isa($val, $typ)))
             # TODO: this verifies the that the number of fields is correct.
             #       We might want to force an error (e.g., by using an assert) instead.
-            if use_fieldnames
-                push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
-            else
-                push!(info.tests, :(length(names($typ)) == $(length(expr.args)-1)))
-            end
+            push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
 
             dotnums = Expr[:(getfield($val, $i)) for i in 1:length(expr.args)-1]
 
@@ -128,8 +122,8 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         ### info.assignments
 
         # fix up let assignments to determine which variables to match
-        vars1 = [getvar(x) => (x,y) for (x,y) in info1.assignments]
-        vars2 = [getvar(x) => (x,y) for (x,y) in info2.assignments]
+        vars1 = Dict(getvar(x) => (x,y) for (x,y) in info1.assignments)
+        vars2 = Dict(getvar(x) => (x,y) for (x,y) in info2.assignments)
 
         sharedvars = intersect(keys(vars1), keys(vars2))
 
@@ -246,7 +240,7 @@ function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
 
     else
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
-        unapply(sub(vs,2:length(vs)), sub(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
+        unapply(view(vs,2:length(vs)), view(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
     end
 end
 
