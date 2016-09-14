@@ -1,4 +1,22 @@
 
+0.3.0 / 2016-09-13
+==================
+
+  * Additional Julia v0.5 deprecation updates
+  * Replace "sub" with "view"
+
+v0.2.4 / 2016-05-14
+===================
+
+  * Fix deprecation warnings on julia v0.5
+  * Fix doc example formatting
+  * Added examples to the documentation
+
+v0.2.1 / 2016-01-12
+===================
+
+  * Fix RTD documentation generation
+
 v0.2.0 / 2016-01-03
 ===================
 
