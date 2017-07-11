@@ -114,9 +114,9 @@ t = Fun("x", Fun("y", App(Var("x"), Var("y"))))
 
 let io = IOBuffer()
     show(io, id)
-    @assert takebuf_string(io) == "^x.x"
+    @assert String(take!(io)) == "^x.x"
     show(io, t)
-    @assert takebuf_string(io) == "^x.^y.(x y)"
+    @assert String(take!(io)) == "^x.^y.(x y)"
     @assert is_identity_fun(id)
     @assert !is_identity_fun(t)
 end
@@ -297,7 +297,7 @@ function fizzbuzz(range::Range)
             (_,_) => print(io, n, ' ')
         end
     end
-    takebuf_string(io)
+    String(take!(io))
 end
 
 @assert fizzbuzz(1:15) == "1 2 fizz 4 buzz fizz 7 8 fizz buzz 11 fizz 13 14 fizzbuzz "
