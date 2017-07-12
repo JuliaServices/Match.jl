@@ -3,13 +3,13 @@
 # Address, Person types for deep match test
 #
 
-type Address
+struct Address
     street::AbstractString
     city::AbstractString
     zip::AbstractString
 end
 
-type Person
+struct Person
     firstname::AbstractString
     lastname::AbstractString
     address::Address
@@ -19,18 +19,18 @@ end
 # Untyped lambda calculus definitions
 #
 
-abstract Term
+abstract type Term end
 
-immutable Var <: Term
+struct Var <: Term
     name::AbstractString
 end
 
-immutable Fun <: Term
+struct Fun <: Term
     arg::AbstractString
     body::Term
 end
 
-immutable App <: Term
+struct App <: Term
     f::Term
     v::Term
 end
