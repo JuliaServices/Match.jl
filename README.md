@@ -1,21 +1,9 @@
-.. image:: https://travis-ci.org/kmsquire/Match.jl.svg?branch=master
-   :target: https://travis-ci.org/kmsquire/Match.jl
-   :alt: Travis Build Status
-.. image:: https://ci.appveyor.com/api/projects/status/2p04pa4wkume806f?svg=true
-   :target: https://ci.appveyor.com/project/kmsquire/match-jl
-   :alt: Appveyor Build Status
-.. image:: https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master
-   :target: https://codecov.io/github/kmsquire/Match.jl?branch=master
-   :alt: Test Coverage
-.. image:: http://pkg.julialang.org/badges/Match_0.5.svg
-   :target: http://pkg.julialang.org/?pkg=Match&ver=0.5
-   :alt: PkgEval.jl Status on Julia 0.5
-.. image:: http://pkg.julialang.org/badges/Match_0.6.svg
-   :target: http://pkg.julialang.org/?pkg=Match&ver=0.6
-   :alt: PkgEval.jl Status on Julia 0.6
-.. image:: https://readthedocs.org/projects/matchjl/badge/?version=latest
-   :target: http://matchjl.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+[![Travis Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
+[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/2p04pa4wkume806f?svg=true)](https://ci.appveyor.com/project/kmsquire/match-jl)
+[![Test Coverage](https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master)](https://codecov.io/github/kmsquire/Match.jl?branch=master)
+[![PkgEval.jl Status on Julia 0.5](http://pkg.julialang.org/badges/Match_0.5.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.5)
+[![PkgEval.jl Status on Julia 0.6](http://pkg.julialang.org/badges/Match_0.6.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.6)
+[![Documentation Status](https://readthedocs.org/projects/matchjl/badge/?version=latest)](http://matchjl.readthedocs.io/en/latest/?badge=latest)
 
 # Advanced Pattern Matching for Julia
 
