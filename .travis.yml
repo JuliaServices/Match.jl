@@ -23,3 +23,6 @@ git:
 after_success:
   # push coverage results to Codecov
   - julia -e 'cd(Pkg.dir("Match")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  # publish documentation
+  - julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("Match")); include(joinpath("docs", "make.jl"))'
