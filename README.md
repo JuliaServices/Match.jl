@@ -3,7 +3,7 @@
 [![Test Coverage](https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master)](https://codecov.io/github/kmsquire/Match.jl?branch=master)
 [![PkgEval.jl Status on Julia 0.5](http://pkg.julialang.org/badges/Match_0.5.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.5)
 [![PkgEval.jl Status on Julia 0.6](http://pkg.julialang.org/badges/Match_0.6.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.6)
-[![Documentation Status](https://readthedocs.org/projects/matchjl/badge/?version=latest)](http://matchjl.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg)](https://kmsquire.github.io/Match.jl/latest)
 
 # Advanced Pattern Matching for Julia
 
@@ -13,7 +13,7 @@ Features:
 * Deep matching within data types and matrices
 * Variable binding within matches
 
-For alternatives to `Match`, check out the following modules
+For alternatives to `Match`, check out
 
 * toivoh's [`PatternDispatch.jl`](https://github.com/toivoh/PatternDispatch.jl) for a more Julia-like function dispatch on patterns.
 
@@ -40,6 +40,6 @@ The package provides one macro, `@match`, which can be used as:
 It is possible to supply variables inside pattern, which will be bound
 to corresponding values. 
 
-See the [documentation at ReadTheDocs](https://matchjl.readthedocs.org/en/latest/)
+See the [documentation](http://kmsquire.github.io/Match.jl/latest/)
 for examples of this and other features.
 
