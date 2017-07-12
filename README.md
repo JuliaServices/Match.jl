@@ -1,11 +1,25 @@
-[![Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
-[![PkgEval](http://pkg.julialang.org/badges/Match_release.svg)](http://pkg.julialang.org/?pkg=Match&ver=release)
+.. image:: https://travis-ci.org/kmsquire/Match.jl.svg?branch=master
+   :target: https://travis-ci.org/kmsquire/Match.jl
+   :alt: Travis Build Status
+.. image:: https://ci.appveyor.com/api/projects/status/2p04pa4wkume806f?svg=true
+   :target: https://ci.appveyor.com/project/kmsquire/match-jl
+   :alt: Appveyor Build Status
+.. image:: https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master
+   :target: https://codecov.io/github/kmsquire/Match.jl?branch=master
+   :alt: Test Coverage
+.. image:: http://pkg.julialang.org/badges/Match_0.5.svg
+   :target: http://pkg.julialang.org/?pkg=Match&ver=0.5
+   :alt: PkgEval.jl Status on Julia 0.5
+.. image:: http://pkg.julialang.org/badges/Match_0.6.svg
+   :target: http://pkg.julialang.org/?pkg=Match&ver=0.6
+   :alt: PkgEval.jl Status on Julia 0.6
+.. image:: https://readthedocs.org/projects/matchjl/badge/?version=latest
+   :target: http://matchjl.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 # Advanced Pattern Matching for Julia
 
-Scala has some of the most advanced pattern matching machinery.  This
-package is an attempt to mimic those capabilities in Julia.  Features
-include:
+Features:
 
 * Matching against almost any data type with a first-match policy
 * Deep matching within data types and matrices
@@ -14,10 +28,6 @@ include:
 For alternatives to `Match`, check out the following modules
 
 * toivoh's [`PatternDispatch.jl`](https://github.com/toivoh/PatternDispatch.jl) for a more Julia-like function dispatch on patterns.
-
-* Zach Allaun's [`Match.jl`](https://github.com/zachallaun/Match.jl) which is a similar, but (at this writing) less complete module for pattern matching.
-
-  Note that Zach's `Match.jl` is also not listed as an available package for Julia.  (Zach kindly offered to let this package use the same name--thanks!)
 
 
 ## Installation
