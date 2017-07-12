@@ -1,14 +1,17 @@
 ### Match Expression Info
 
-immutable MatchExprInfo
-    tests             ::Vector{Expr}
-    guard_assignments ::Vector{NTuple}
-    assignments       ::Vector{NTuple}
-    guards            ::Vector{Expr}
-    test_assign       ::Vector{NTuple}
+const SymExpr = Union{Symbol,Expr}
+const Assignment = Tuple{SymExpr,SymExpr}
+
+struct MatchExprInfo
+    tests::Vector{Expr}
+    guard_assignments::Vector{Assignment}
+    assignments::Vector{Assignment}
+    guards::Vector{Expr}
+    test_assign::Vector{Assignment}
 end
 
-MatchExprInfo() = MatchExprInfo(Expr[],NTuple[],NTuple[],Expr[],NTuple[])
+MatchExprInfo() = MatchExprInfo(Expr[], Assignment[], Assignment[], Expr[], Assignment[])
 
 ## unapply(val, expr, syms, guardsyms, valsyms, info)
 ##
@@ -57,7 +60,7 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.tests, :(Match.ismatch($expr, $val)))
             info
         else
-            # Assume this is a type
+            # Assume this is a struct
             typ = expr.args[1]
             parms = expr.args[2:end]
 
@@ -106,8 +109,8 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         append!(info.test_assign, info1.test_assign)
         append!(info.test_assign, info2.test_assign)
 
-        if length(info1.assignments) > 0;  push!(info.test_assign, (g1, false));  end
-        if length(info2.assignments) > 0;  push!(info.test_assign, (g2, false));  end
+        if length(info1.assignments) > 0;  push!(info.test_assign, (g1, Symbol(false)));  end
+        if length(info2.assignments) > 0;  push!(info.test_assign, (g2, Symbol(false)));  end
 
         ### info.tests
 
@@ -198,7 +201,7 @@ end
 
 # Match symbols or complex type fields (e.g., foo.bar) representing a tuples
 
-function unapply(val::Union{Symbol, Expr}, exprs::AbstractArray, syms, guardsyms, valsyms,
+function unapply(val::SymExpr, exprs::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     # if isa(val, Expr) && !isexpr(val, :(.))
     #     error("unapply: Array expressions must be assigned to symbols or fields of a complex type (e.g., bar.foo)")
@@ -315,17 +318,22 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
     info
 end
 
+function ispair(m)
+    return isexpr(m, :call) && (m.args[1] == :(=>))
+end
+
+function is_guarded_pair(m)
+    return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && isexpr(m.args[2].args[2], :if)
+end
 
 function gen_match_expr(v, e, code, use_let::Bool=true)
-
-# pattern => val
-    if isexpr(e, :(=>))
+    if ispair(e)
         info = MatchExprInfo()
 
-        (pattern, value) = e.args
+        (pattern, value) = e.args[2:3]
 
         # Extract guards
-        if isexpr(pattern, :tuple) && length(pattern.args) == 2 && isexpr(pattern.args[2], :if)
+        if is_guarded_pair(e)
             guard = pattern.args[2].args[1]
             pattern = pattern.args[1]
             push!(info.guards, guard)
@@ -406,17 +414,17 @@ macro match(v, m)
         for e in reverse(m.args)
             code = gen_match_expr(v, e, code)
         end
-    elseif isexpr(m, :(=>))
+    elseif ispair(m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
         vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!startswith(string(x),"@"), syms)
         if length(vars) == 0
-            code = gen_match_expr(v, Expr(:(=>), m, :true), code, false)
+            code = gen_match_expr(v, Expr(:call, :(=>), m, :true), code, false)
         elseif length(vars) == 1
-            code = gen_match_expr(v, Expr(:(=>), m, vars[1]), code, false)
+            code = gen_match_expr(v, Expr(:call, :(=>), m, vars[1]), code, false)
         else
-            code = gen_match_expr(v, Expr(:(=>), m, Expr(:tuple, vars...)), code, false)
+            code = gen_match_expr(v, Expr(:call, :(=>), m, Expr(:tuple, vars...)), code, false)
         end
     end
 
@@ -428,7 +436,7 @@ fmatch(v, m) = macroexpand(:(@match $v $m))
 
 # The ismatch macro
 macro ismatch(val, m)
-    code = gen_match_expr(val, Expr(:(=>), m, :true), :false)
+    code = gen_match_expr(val, Expr(:call, :(=>), m, :true), :false)
     esc(code)
 end
 

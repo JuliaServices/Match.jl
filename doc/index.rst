@@ -89,13 +89,13 @@ Deep Matching of Composite Types
 One nice feature is the ability to match embedded types, as well as
 bind variables to components of those types::
 
-  type Address
+  struct Address
       street::String
       city::String
       zip::String
   end
 
-  type Person
+  struct Person
       firstname::String
       lastname::String
       address::Address

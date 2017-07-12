@@ -26,13 +26,13 @@ d = Dict{Int,AbstractString}(1=>"a",2=>"b")
 # Pattern extraction
 # inspired by http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/
 
-# type Address
+# struct Address
 #     street::AbstractString
 #     city::AbstractString
 #     zip::AbstractString
 # end
 
-# type Person
+# struct Person
 #     firstname::AbstractString
 #     lastname::AbstractString
 #     address::Address
@@ -58,18 +58,18 @@ end
 ## Untyped lambda calculus definitions
 ##
 
-# abstract Term
+# abstract type Term end
 
-# immutable Var <: Term
+# struct Var <: Term
 #     name::AbstractString
 # end
 
-# immutable Fun <: Term
+# struct Fun <: Term
 #     arg::AbstractString
 #     body::Term
 # end
 
-# immutable App <: Term
+# struct App <: Term
 #     f::Term
 #     v::Term
 # end
@@ -304,18 +304,18 @@ end
 
 # Zach Allaun's "Balancing Red-Black Trees" (https://github.com/zachallaun/Match.jl#balancing-red-black-trees)
 
-abstract RBTree
+abstract type RBTree end
 
-immutable Leaf <: RBTree
+struct Leaf <: RBTree
 end
 
-immutable Red <: RBTree
+struct Red <: RBTree
     value
     left::RBTree
     right::RBTree
 end
 
-immutable Black <: RBTree
+struct Black <: RBTree
     value
     left::RBTree
     right::RBTree
