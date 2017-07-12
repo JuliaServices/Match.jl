@@ -44,7 +44,7 @@ function unapply(val, sym::Symbol, syms, guardsyms, valsyms, info, array_checked
 
 # Constants
     else
-        push!(info.tests, :(Match.ismatch($sym,$val)))
+        push!(info.tests, :(Match.ismatch($sym, $val)))
     end
 
     info
@@ -67,9 +67,9 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.tests, :(isa($val, $typ)))
             # TODO: this verifies the that the number of fields is correct.
             #       We might want to force an error (e.g., by using an assert) instead.
-            push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args)-1)))
+            push!(info.tests, :(length(fieldnames($typ)) == $(length(expr.args) - 1)))
 
-            dotnums = Expr[:(getfield($val, $i)) for i in 1:length(expr.args)-1]
+            dotnums = Expr[:(getfield($val, $i)) for i in 1:length(expr.args) - 1]
 
             unapply(dotnums, parms, syms, guardsyms, valsyms, info, array_checked)
         end
@@ -125,8 +125,8 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         ### info.assignments
 
         # fix up let assignments to determine which variables to match
-        vars1 = Dict(getvar(x) => (x,y) for (x,y) in info1.assignments)
-        vars2 = Dict(getvar(x) => (x,y) for (x,y) in info2.assignments)
+        vars1 = Dict(getvar(x) => (x, y) for (x, y) in info1.assignments)
+        vars2 = Dict(getvar(x) => (x, y) for (x, y) in info2.assignments)
 
         sharedvars = intersect(keys(vars1), keys(vars2))
 
@@ -215,9 +215,9 @@ function unapply(val::SymExpr, exprs::AbstractArray, syms, guardsyms, valsyms,
             end
             seen_dots = true
             sym = array_type_of(exprs[i].args[1])
-            unapply(:($val[$i:(end-$(length(exprs)-i))]), sym, syms, guardsyms, valsyms, info, array_checked)
+            unapply(:($val[$i:(end - $(length(exprs) - i))]), sym, syms, guardsyms, valsyms, info, array_checked)
         elseif seen_dots
-            unapply(:($val[end-$(length(exprs)-i)]), exprs[i], syms, guardsyms, valsyms, info, array_checked)
+            unapply(:($val[end - $(length(exprs) - i)]), exprs[i], syms, guardsyms, valsyms, info, array_checked)
         else
             unapply(:($val[$i]), exprs[i], syms, guardsyms, valsyms, info, array_checked)
         end
@@ -233,7 +233,7 @@ function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
     if isexpr(es[1], :(...))
         sym = array_type_of(es[1].args[1])
-        unapply(vs[1:end-(length(es)-1)], sym, syms, guardsyms, valsyms, info, array_checked)
+        unapply(vs[1:end - (length(es) - 1)], sym, syms, guardsyms, valsyms, info, array_checked)
 
     elseif length(es) == length(vs) == 1
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
@@ -243,7 +243,7 @@ function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
 
     else
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
-        unapply(view(vs,2:length(vs)), view(es,2:length(es)), syms, guardsyms, valsyms, info, array_checked)
+        unapply(view(vs, 2:length(vs)), view(es, 2:length(es)), syms, guardsyms, valsyms, info, array_checked)
     end
 end
 
@@ -272,7 +272,7 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
         error("unapply_array() called on a non-array expression")
     end
 
-    sdim = :($dim+max(ndims($val)-2,0))
+    sdim = :($dim + max(ndims($val) - 2, 0))
 
     if !array_checked #!(isexpr(val, :call) && val.args[1] == :(Match.subslicedim))
         # if we recursively called this with subslicedim (below),
@@ -284,7 +284,7 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
         #push!(info.tests, :(isa($val, AbstractArray)))
         #push!(info.tests, check_dim_size_expr(val, sdim, expr))
         push!(info.tests, check_dim_size_expr(val, dim, expr))
-        array_checked=true
+        array_checked = true
     end
 
     exprs = expr.args
@@ -300,11 +300,11 @@ function unapply_array(val, expr::Expr, syms, guardsyms, valsyms, info, array_ch
                 end
                 seen_dots = true
                 sym = array_type_of(exprs[i].args[1])
-                j = length(exprs)-i
+                j = length(exprs) - i
                 s = :(Match.slicedim($val, $dim, $i, $j))
                 unapply(s, sym, syms, guardsyms, valsyms, info, array_checked)
             elseif seen_dots
-                j = length(exprs)-i
+                j = length(exprs) - i
                 s = :(Match.slicedim($val, $dim, $j, true))
                 unapply(s, exprs[i], syms, guardsyms, valsyms, info, array_checked)
             else
@@ -392,7 +392,7 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
                          end)
             end
 
-            test_assign = [:($expr = $val) for (expr,val) in info.test_assign]
+            test_assign = [:($expr = $val) for (expr, val) in info.test_assign]
 
             let_expr(expr, test_assign)
         end
@@ -418,7 +418,7 @@ macro match(v, m)
         code = gen_match_expr(v, m, code)
     else
         code = :(error("Pattern does not match"))
-        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x->!startswith(string(x),"@"), syms)
+        vars = setdiff(getvars(m), [:_]) |> syms -> filter(x -> !startswith(string(x), "@"), syms)
         if length(vars) == 0
             code = gen_match_expr(v, Expr(:call, :(=>), m, :true), code, false)
         elseif length(vars) == 1

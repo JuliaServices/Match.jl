@@ -9,12 +9,12 @@ import Base: show
 test1(item) = @match item begin
     n::Int                       => "Integers are awesome!"
     str::AbstractString          => "Strings are the best"
-    m::Dict{Int, AbstractString} => "Ints for Strings?"
+    m::Dict{Int,AbstractString}  => "Ints for Strings?"
     d::Dict                      => "A Dict! Looking up a word?"
     _                            => "Something unexpected"
 end
 
-d = Dict{Int,AbstractString}(1=>"a",2=>"b")
+d = Dict{Int,AbstractString}(1 => "a", 2 => "b")
 
 @test test1(66)     == "Integers are awesome!"
 @test test1("abc")  == "Strings are the best"
@@ -41,7 +41,7 @@ d = Dict{Int,AbstractString}(1=>"a",2=>"b")
 test2(person) = @match person begin
     Person("Julia", lastname,  _) => "Found Julia $lastname"
     Person(firstname, "Julia", _) => "$firstname Julia was here!"
-    Person(firstname, lastname ,Address(_, "Cambridge", zip)) => "$firstname $lastname lives in zip $zip"
+    Person(firstname, lastname, Address(_, "Cambridge", zip)) => "$firstname $lastname lives in zip $zip"
     _::Person  => "Unknown person!"
 end
 
@@ -123,8 +123,8 @@ end
 
 # Test single terms
 
-myisodd(x::Int) = @match(x, i => i%2==1)
-@assert filter(myisodd, 1:10) == filter(isodd, 1:10) == [1,3,5,7,9]
+myisodd(x::Int) = @match(x, i => i % 2 == 1)
+@assert filter(myisodd, 1:10) == filter(isodd, 1:10) == [1, 3, 5, 7, 9]
 
 # Alternatives, Guards
 
@@ -139,11 +139,11 @@ function parse_arg(arg::AbstractString, value::Any=nothing)
 end
 
 @assert parse_arg("-l", "eng")  == "Language set to eng"
-@assert parse_arg("-l")         == "Unknown argument: (\"-l\",nothing)"
+@assert parse_arg("-l")         == "Unknown argument: (\"-l\", nothing)"
 @assert parse_arg("-o", 4)      == "Optimization level set to 4"
 @assert parse_arg("--optim", 5) == "Optimization level set to 5"
 @assert parse_arg("-o", 0)      == "Illegal optimization level 0!"
-@assert parse_arg("-o", 1.0)    == "Unknown argument: (\"-o\",1.0)"
+@assert parse_arg("-o", 1.0)    == "Unknown argument: (\"-o\", 1.0)"
 
 @assert parse_arg("-h") == parse_arg("--help") == "Help!"
 
@@ -193,21 +193,21 @@ end
 
 # extract first, rest from array
 # (b is a subarray of the original array)
-@assert @match([1:4;], [a,b...])                             == (1,[2,3,4])
-@assert @match([1:4;], [a...,b])                             == ([1,2,3],4)
-@assert @match([1:4;], [a,b...,c])                           == (1,[2,3],4)
+@assert @match([1:4;], [a, b...])                             == (1, [2, 3, 4])
+@assert @match([1:4;], [a..., b])                             == ([1, 2, 3], 4)
+@assert @match([1:4;], [a, b..., c])                           == (1, [2, 3], 4)
 
 # match particular values at the beginning of a vector
-@assert @match([1:10;], [1,2,a...])                          == [3:10;]
-@assert @match([1:10;], [1,a...,9,10])                       == [2:8;]
+@assert @match([1:10;], [1, 2, a...])                          == [3:10;]
+@assert @match([1:10;], [1, a..., 9, 10])                       == [2:8;]
 
 # match / collect columns
-@assert @match([1 2 3; 4 5 6], [a b...])                    == ([1,4] , [2 3; 5 6])
-@assert @match([1 2 3; 4 5 6], [a... b])                    == ([1 2; 4 5] , [3,6])
-@assert @match([1 2 3; 4 5 6], [a b c])                     == ([1,4] , [2,5] , [3,6])
-@assert @match([1 2 3; 4 5 6], [[1,4] a b])                 == ([2,5] , [3,6])
+@assert @match([1 2 3; 4 5 6], [a b...])                    == ([1, 4], [2 3; 5 6])
+@assert @match([1 2 3; 4 5 6], [a... b])                    == ([1 2; 4 5], [3, 6])
+@assert @match([1 2 3; 4 5 6], [a b c])                     == ([1, 4], [2, 5], [3, 6])
+@assert @match([1 2 3; 4 5 6], [[1, 4] a b])                 == ([2, 5], [3, 6])
 
-@assert @match([1 2 3 4; 5 6 7 8], [a b... c])              == ([1,5] , [2 3; 6 7] , [4,8])
+@assert @match([1 2 3 4; 5 6 7 8], [a b... c])              == ([1, 5], [2 3; 6 7], [4, 8])
 
 if VERSION < v"0.5.0-dev"
     # match / collect rows
@@ -219,13 +219,13 @@ if VERSION < v"0.5.0-dev"
     @assert @match([1 2 3; 4 5 6; 7 8 9], [a..., b])            == ([1 2 3; 4 5 6], [7 8 9])
     @assert @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])        ==  [4 5 6; 7 8 9]
 
-    @assert @match([1 2 3; 4 5 6; 7 8 9; 10 11 12], [a,b...,c]) == ([1 2 3], [4 5 6; 7 8 9], [10 11 12])
+    @assert @match([1 2 3; 4 5 6; 7 8 9; 10 11 12], [a, b..., c]) == ([1 2 3], [4 5 6; 7 8 9], [10 11 12])
 
     # match invidual positions
-    @assert @match([1 2; 3 4], [1 a; b c])                      == (2,3,4)
-    @assert @match([1 2; 3 4], [1 a; b...])                     == (2,[3 4])
+    @assert @match([1 2; 3 4], [1 a; b c])                      == (2, 3, 4)
+    @assert @match([1 2; 3 4], [1 a; b...])                     == (2, [3 4])
 
-    @assert @match([ 1  2  3  4
+    @assert @match([1  2  3  4
                      5  6  7  8
                      9 10 11 12
                     13 14 15 16
@@ -238,12 +238,12 @@ if VERSION < v"0.5.0-dev"
 
 else
     # match / collect rows
-    @assert @match([1 2 3; 4 5 6], [a, b])                      == ([1,2,3], [4,5,6])
-    @assert @match([1 2 3; 4 5 6], [[1,2,3], a])                ==  [4,5,6]             # TODO: don't match this
+    @assert @match([1 2 3; 4 5 6], [a, b])                      == ([1, 2, 3], [4, 5, 6])
+    @assert @match([1 2 3; 4 5 6], [[1, 2, 3], a])                ==  [4, 5, 6]             # TODO: don't match this
     #@assert @match([1 2 3; 4 5 6], [1 2 3; a])                  ==  [4,5,6]
 
-    @assert @match([1 2 3; 4 5 6; 7 8 9], [a, b...])            == ([1,2,3], [4 5 6; 7 8 9])
-    @assert @match([1 2 3; 4 5 6; 7 8 9], [a..., b])            == ([1 2 3; 4 5 6], [7,8,9])
+    @assert @match([1 2 3; 4 5 6; 7 8 9], [a, b...])            == ([1, 2, 3], [4 5 6; 7 8 9])
+    @assert @match([1 2 3; 4 5 6; 7 8 9], [a..., b])            == ([1 2 3; 4 5 6], [7, 8, 9])
     #@assert @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])        ==  [4 5 6; 7 8 9]
 
     #@assert @match([1 2 3; 4 5 6; 7 8 9; 10 11 12], [a,b...,c]) == ([1,2,3], [4 5 6; 7 8 9], [10 11 12])
@@ -269,10 +269,10 @@ end
 
 
 # match 3D arrays
-m = reshape([1:8;], (2,2,2))
+m = reshape([1:8;], (2, 2, 2))
 @assert @match(m, [a b])                                    == ([1 3; 2 4], [5 7; 6 8])
 if VERSION < v"0.5.0-dev"
-    @assert @match(m, [[1 a; b c] d])                           == (3,2,4,[5 7; 6 8])
+    @assert @match(m, [[1 a; b c] d])                           == (3, 2, 4, [5 7; 6 8])
 end
 
 # match against an expression
@@ -290,11 +290,11 @@ end
 function fizzbuzz(range::Range)
     io = IOBuffer()
     for n in range
-        @match (n%3, n%5) begin
-            (0,0) => print(io, "fizzbuzz ")
-            (0,_) => print(io, "fizz ")
-            (_,0) => print(io, "buzz ")
-            (_,_) => print(io, n, ' ')
+        @match (n % 3, n % 5) begin
+            (0, 0) => print(io, "fizzbuzz ")
+            (0, _) => print(io, "fizz ")
+            (_, 0) => print(io, "buzz ")
+            (_, _) => print(io, n, ' ')
         end
     end
     String(take!(io))
@@ -323,7 +323,7 @@ end
 
 function balance(tree::RBTree)
     @match tree begin
-        ( Black(z, Red(y, Red(x, a, b), c), d)
+        (Black(z, Red(y, Red(x, a, b), c), d)
          || Black(z, Red(x, a, Red(y, b, c)), d)
          || Black(x, a, Red(z, Red(y, b, c), d))
          || Black(x, a, Red(y, b, Red(z, c, d)))) => Red(y, Black(x, a, b),
