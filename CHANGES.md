@@ -1,5 +1,16 @@
 
-0.3.0 / 2016-09-13
+v0.4.0 / 2017-07-11
+==================
+
+  * Update to run on julia v0.6
+  * Bump REQUIRE to julia v0.6, update CI testing, coverage
+  * Fix deprecation: takebuf_string(x) => String(take!(x))
+  * Enable precompilation
+  * Update tests
+  * Update README badges, text
+  * Whitespace fixes
+
+v0.3.0 / 2016-09-13
 ==================
 
   * Additional Julia v0.5 deprecation updates
