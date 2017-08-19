@@ -10,6 +10,8 @@ notifications:
   email: false
 git:
   depth: 99999999
+before_install:
+  - rvm get stable  # work around rvm bug on osx
 
 ## uncomment the following lines to allow failures on nightly julia
 ## (tests will run but not make your overall status red)
