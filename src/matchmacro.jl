@@ -324,7 +324,7 @@ function ispair(m)
 end
 
 function is_guarded_pair(m)
-    return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && isexpr(m.args[2].args[2], :if)
+    return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && length(m.args[2].args) == 2 && isexpr(m.args[2].args[2], :if)
 end
 
 function gen_match_expr(v, e, code, use_let::Bool=true)
