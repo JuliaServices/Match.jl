@@ -231,15 +231,16 @@ end
 
 function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
-    if isexpr(es[1], :(...))
+
+    if length(es) == length(vs) == 0
+        info
+
+    elseif isexpr(es[1], :(...))
         sym = array_type_of(es[1].args[1])
         unapply(vs[1:end - (length(es) - 1)], sym, syms, guardsyms, valsyms, info, array_checked)
 
     elseif length(es) == length(vs) == 1
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
-
-    elseif length(es) == length(vs) == 0
-        info
 
     else
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
