@@ -231,15 +231,16 @@ end
 
 function unapply(vs::AbstractArray, es::AbstractArray, syms, guardsyms, valsyms,
                  info, array_checked::Bool=false)
-    if isexpr(es[1], :(...))
+
+    if length(es) == length(vs) == 0
+        info
+
+    elseif isexpr(es[1], :(...))
         sym = array_type_of(es[1].args[1])
         unapply(vs[1:end - (length(es) - 1)], sym, syms, guardsyms, valsyms, info, array_checked)
 
     elseif length(es) == length(vs) == 1
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
-
-    elseif length(es) == length(vs) == 0
-        info
 
     else
         unapply(vs[1], es[1], syms, guardsyms, valsyms, info, array_checked)
@@ -323,7 +324,7 @@ function ispair(m)
 end
 
 function is_guarded_pair(m)
-    return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && isexpr(m.args[2].args[2], :if)
+    return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && length(m.args[2].args) == 2 && isexpr(m.args[2].args[2], :if)
 end
 
 function gen_match_expr(v, e, code, use_let::Bool=true)
@@ -410,25 +411,32 @@ end
 macro match(v, m)
     code = :nothing
 
+    # TODO this is a hack to avoid recomputing v
+    # we probably need to clean up this whole package
+    _v = gensym("v")
+
     if isexpr(m, :block)
         for e in reverse(m.args)
-            code = gen_match_expr(v, e, code)
+            code = gen_match_expr(_v, e, code)
         end
     elseif ispair(m)
-        code = gen_match_expr(v, m, code)
+        code = gen_match_expr(_v, m, code)
     else
         code = :(error("Pattern does not match"))
         vars = setdiff(getvars(m), [:_]) |> syms -> filter(x -> !startswith(string(x), "@"), syms)
         if length(vars) == 0
-            code = gen_match_expr(v, Expr(:call, :(=>), m, :true), code, false)
+            code = gen_match_expr(_v, Expr(:call, :(=>), m, :true), code, false)
         elseif length(vars) == 1
-            code = gen_match_expr(v, Expr(:call, :(=>), m, vars[1]), code, false)
+            code = gen_match_expr(_v, Expr(:call, :(=>), m, vars[1]), code, false)
         else
-            code = gen_match_expr(v, Expr(:call, :(=>), m, Expr(:tuple, vars...)), code, false)
+            code = gen_match_expr(_v, Expr(:call, :(=>), m, Expr(:tuple, vars...)), code, false)
         end
     end
 
-    esc(code)
+    quote
+      $(esc(_v)) = $(esc(v))
+      $(esc(code))
+    end
 end
 
 # Function producing/showing the generated code

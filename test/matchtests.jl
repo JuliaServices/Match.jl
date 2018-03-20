@@ -327,3 +327,22 @@ test_interp(item) = @match item begin
     [a, b] => :($a + $b)
 end
 @test test_interp([1, 2]) == :(1 + 2)
+
+# Test matching against single tuples (regression test for first example i n https://github.com/kmsquire/Match.jl/issues/43)
+
+@test (@match (:x,) begin
+  (:x,) => :ok
+end) == :ok
+
+# Test matching against empty structs (regression test for second example in https://github.com/kmsquire/Match.jl/issues/43)
+
+struct True end
+
+e = (True(), 1)
+
+@test @match(e, (True(), x)) == 1
+
+# Test that symbols are not interpreted as variables (https://github.com/kmsquire/Match.jl/issues/45)
+
+x = 42
+@test_broken @match((:x,), (:x,)) == true
