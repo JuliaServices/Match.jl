@@ -5,8 +5,8 @@
 # ismatch
 #
 
-Base.ismatch{R<:Number}(r::Range{R}, s::Number) = s in r
-Base.ismatch{T}(r::Range{T}, s::T) = s in r
+Base.ismatch(r::AbstractRange{R}, s::Number) where R <: Number = s in r
+Base.ismatch(r::AbstractRange{T}, s::T) where T = s in r
 Base.ismatch(c::Char, s::Number) = false
 Base.ismatch(s::Number, c::Char) = false
 Base.ismatch(r,s) = (r == s)
@@ -155,7 +155,7 @@ end
 # generate an optional let expression
 
 let_expr(expr, assignments::AbstractArray) =
-    length(assignments) > 0 ? Expr(:let, expr, assignments...) : expr
+    length(assignments) > 0 ? Expr(:let, Expr(:block, assignments...), expr) : expr
 
 #
 # array_type_of
