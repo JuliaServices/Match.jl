@@ -148,20 +148,20 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
             push!(info.assignments, (expr, :($g1 ? $val1 : $val2)))
         end
 
-        for (expr, val) in info1.assignments
-            vs = getvar(expr)
+        for (lexpr, lval) in info1.assignments
+            vs = getvar(lexpr)
             if !(vs in sharedvars)
                 # here and below, we assign to nothing
                 # so the type info is removed
                 # TODO: move it to $val???
-                push!(info.assignments, (expr, :($g1 ? $val : nothing)))
+                push!(info.assignments, (lexpr, :($g1 ? $lval : nothing)))
             end
         end
 
-        for (expr, val) in info2.assignments
-            vs = getvar(expr)
+        for (lexpr, lval) in info2.assignments
+            vs = getvar(lexpr)
             if !(vs in sharedvars)
-                push!(info.assignments, (expr, :($g2 ? $val : nothing)))
+                push!(info.assignments, (lexpr, :($g2 ? $lval : nothing)))
             end
         end
 

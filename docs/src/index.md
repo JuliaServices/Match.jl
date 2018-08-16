@@ -25,10 +25,10 @@ The package provides one macro, @match, which can be used as:
 using Match
 
 @match item begin
-    pattern1              => result1
-    pattern2, if cond end => result2
-    pattern3 || pattern4  => result3
-    _                     => default_result
+    pattern1                => result1
+    (pattern2, if cond end) => result2
+    pattern3 || pattern4    => result3
+    _                       => default_result
 end
 ```
 
@@ -131,8 +131,8 @@ Guards allow a conditional match. They are not a standard part of Julia yet, so 
 function parse_arg(arg::String, value::Any=nothing)
   @match (arg, value) begin
     ("-l",              lang)    => println("Language set to $lang")
-    ("-o" || "--optim", n::Int),
-     if 0 < n <= 5 end           => println("Optimization level set to $n")
+    (("-o" || "--optim", n::Int),
+     if 0 < n <= 5 end)           => println("Optimization level set to $n")
     ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
     ("-h" || "--help",  nothing) => println("Help!")
     bad                          => println("Unknown argument: $bad")

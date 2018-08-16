@@ -31,10 +31,10 @@ The package provides one macro, `@match`, which can be used as:
     using Match
 
     @match item begin
-        pattern1              => result1
-        pattern2, if cond end => result2
-        pattern3 || pattern4  => result3
-        _                     => default_result
+        pattern1                => result1
+        (pattern2, if cond end) => result2
+        pattern3 || pattern4    => result3
+        _                       => default_result
     end
 
 It is possible to supply variables inside pattern, which will be bound

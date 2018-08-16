@@ -1,5 +1,5 @@
 using Match
-using Base.Test
+using Test
 
 include("testtypes.jl")
 
@@ -103,7 +103,7 @@ end
 # Guard test is here
 function is_identity_fun(term::Term)
    @match term begin
-     Fun(x, Var(y)), if x == y end => true
+     (Fun(x, Var(y)), if x == y end) => true
      _ => false
    end
 end
@@ -130,8 +130,8 @@ myisodd(x::Int) = @match(x, i => i % 2 == 1)
 
 function parse_arg(arg::AbstractString, value::Any=nothing)
    @match (arg, value) begin
-      ("-l",              lang),   if lang != nothing end => "Language set to $lang"
-      ("-o" || "--optim", n::Int),      if 0 < n <= 5 end => "Optimization level set to $n"
+      (("-l",              lang),   if lang != nothing end) => "Language set to $lang"
+      (("-o" || "--optim", n::Int),      if 0 < n <= 5 end) => "Optimization level set to $n"
       ("-o" || "--optim", n::Int)                         => "Illegal optimization level $(n)!"
       ("-h" || "--help",  nothing)                        => "Help!"
       bad                                                 => "Unknown argument: $bad"
@@ -245,17 +245,18 @@ m = reshape([1:8;], (2, 2, 2))
 
 # match against an expression
 function get_args(ex::Expr)
-    @match ex begin
-        Expr(:call, [:+, args...], _) => args
+    out = @match ex.args begin
+        [:+, args...] => args
         _ => "None"
     end
+    out
 end
 
 @test get_args(Expr(:call, :+, :x, 1)) == [:x, 1]
 
 # Zach Allaun's fizzbuzz (https://github.com/zachallaun/Match.jl#awesome-fizzbuzz)
 
-function fizzbuzz(range::Range)
+function fizzbuzz(range::AbstractRange)
     io = IOBuffer()
     for n in range
         @match (n % 3, n % 5) begin
