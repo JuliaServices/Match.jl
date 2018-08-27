@@ -5,11 +5,11 @@
 # ismatch
 #
 
-ismatch(r::AbstractRange, s::Number) = s in r
-ismatch(c::Char, s::Number) = false
-ismatch(s::Number, c::Char) = false
-ismatch(r::Regex, s::AbstractString) = occursin(r, s)
-ismatch(r, s) = (r == s)
+occursin(r::AbstractRange, s::Number) = s in r
+occursin(c::Char, s::Number) = false
+occursin(s::Number, c::Char) = false
+occursin(r::Regex, s::AbstractString) = occursin(r, s)
+occursin(r, s) = (r == s)
 
 #
 # slicedim
