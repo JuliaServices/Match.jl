@@ -322,11 +322,30 @@ function ispair(m)
     return isexpr(m, :call) && (m.args[1] == :(=>))
 end
 
+function rewrite_pair(m)
+    # The parsing of
+    #   "expr, if a == b end => target"
+    # changed from
+    #  (expr, if a == b end) => target  # v0.6
+    # to
+    #  (expr, if a == b end => target)  # v0.7
+    #
+    # For now, we rewrite the expression to match v0.6
+    # (In the future, we'll switch to using "where")
+    if isexpr(m, :tuple) && length(m.args) == 2 && ispair(m.args[2])
+        target = m.args[2].args[3]
+        newtuple = Expr(:tuple, m.args[1], m.args[2].args[2])
+        return Expr(:call, :(=>), newtuple, target)
+    end
+    return m
+end
+
 function is_guarded_pair(m)
     return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && isexpr(m.args[2].args[2], :if)
 end
 
 function gen_match_expr(v, e, code, use_let::Bool=true)
+    e = rewrite_pair(e)
     if ispair(e)
         info = MatchExprInfo()
 
