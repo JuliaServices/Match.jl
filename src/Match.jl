@@ -1,4 +1,3 @@
-__precompile__()
 module Match
 
 using Base.Meta

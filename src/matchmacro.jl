@@ -454,7 +454,7 @@ end
 fmatch(v, m) = macroexpand(:(@match $v $m))
 
 # The ismatch macro
-macro ismatch(val, m)
+macro occursin(val, m)
     code = gen_match_expr(val, Expr(:call, :(=>), m, :true), :false)
     esc(code)
 end
