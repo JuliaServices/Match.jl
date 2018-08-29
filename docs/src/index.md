@@ -522,15 +522,15 @@ The following function is a nice example of matching expressions. It is used in 
 extract_name(x) = string(x)
 function extract_name(e::Expr)
     @match e begin
-        Expr(:type,      [_, name, _], _)     => name
-        Expr(:typealias, [name, _], _)        => name
-        Expr(:call,      [name, _...], _)     => name
-        Expr(:function,  [sig, _...], _)      => extract_name(sig)
-        Expr(:const,     [assn, _...], _)     => extract_name(assn)
-        Expr(:(=),       [fn, body, _...], _) => extract_name(fn)
-        Expr(expr_type,  _...)                => error("Can't extract name from ",
-                                                        expr_type, " expression:\n",
-                                                        "    $e\n")
+        Expr(:type,      [_, name, _])     => name
+        Expr(:typealias, [name, _])        => name
+        Expr(:call,      [name, _...])     => name
+        Expr(:function,  [sig, _...])      => extract_name(sig)
+        Expr(:const,     [assn, _...])     => extract_name(assn)
+        Expr(:(=),       [fn, body, _...]) => extract_name(fn)
+        Expr(expr_type,  _...)             => error("Can't extract name from ",
+                                                     expr_type, " expression:\n",
+                                                     "    $e\n")
     end
 end
 ```

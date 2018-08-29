@@ -246,7 +246,7 @@ m = reshape([1:8;], (2, 2, 2))
 # match against an expression
 function get_args(ex::Expr)
     @match ex begin
-        Expr(:call, [:+, args...], _) => args
+        Expr(:call, [:+, args...]) => args
         _ => "None"
     end
 end
