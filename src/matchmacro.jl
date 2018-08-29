@@ -136,32 +136,32 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
 
             # choose most specific variable typing
             if expr1 == expr2 || !isexpr(expr2, :(::))
-                expr = expr1
+                condition_expr = expr1
             elseif !isexpr(expr1, :(::))
-                expr = expr2
+                condition_expr = expr2
             else
                 # here, both vars are typed, but with different types
                 # let the parser figure out the best typing
-                expr = var
+                condition_expr = var
             end
 
-            push!(info.assignments, (expr, :($g1 ? $val1 : $val2)))
+            push!(info.assignments, (condition_expr, :($g1 ? $val1 : $val2)))
         end
 
-        for (expr, val) in info1.assignments
-            vs = getvar(expr)
+        for (assignment_expr, assignment_val) in info1.assignments
+            vs = getvar(assignment_expr)
             if !(vs in sharedvars)
                 # here and below, we assign to nothing
                 # so the type info is removed
-                # TODO: move it to $val???
-                push!(info.assignments, (expr, :($g1 ? $val : nothing)))
+                # TODO: move it to $assignment_val???
+                push!(info.assignments, (assignment_expr, :($g1 ? $assignment_val : nothing)))
             end
         end
 
-        for (expr, val) in info2.assignments
-            vs = getvar(expr)
+        for (assignment_expr, assignment_val) in info2.assignments
+            vs = getvar(assignment_expr)
             if !(vs in sharedvars)
-                push!(info.assignments, (expr, :($g2 ? $val : nothing)))
+                push!(info.assignments, (assignment_expr, :($g2 ? $assignment_val : nothing)))
             end
         end
 
