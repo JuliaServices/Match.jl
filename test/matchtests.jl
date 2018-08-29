@@ -85,27 +85,27 @@ import Base.==
 # Not really the Julian way
 function show(io::IO, term::Term)
     @match term begin
-       Var(n)    => print(io, n)
-       Fun(x, b) => begin
-                        print(io, "^$x.")
-                        show(io, b)
-                    end
-       App(f, v) => begin
-                        print(io, "(")
-                        show(io, f)
-                        print(io, " ")
-                        show(io, v)
-                        print(io, ")")
-                    end
+        Var(n)    => print(io, n)
+        Fun(x, b) => begin
+            print(io, "^$x.")
+            show(io, b)
+        end
+        App(f, v) => begin
+            print(io, "(")
+            show(io, f)
+            print(io, " ")
+            show(io, v)
+            print(io, ")")
+        end
     end
 end
 
 # Guard test is here
 function is_identity_fun(term::Term)
-   @match term begin
-     Fun(x, Var(y)), if x == y end => true
-     _ => false
-   end
+    @match term begin
+        Fun(x, Var(y)), if x == y end => true
+        _ => false
+    end
 end
 
 
@@ -129,13 +129,13 @@ myisodd(x::Int) = @match(x, i => i % 2 == 1)
 # Alternatives, Guards
 
 function parse_arg(arg::AbstractString, value::Any=nothing)
-   @match (arg, value) begin
-      ("-l",              lang),   if lang != nothing end => "Language set to $lang"
-      ("-o" || "--optim", n::Int),      if 0 < n <= 5 end => "Optimization level set to $n"
-      ("-o" || "--optim", n::Int)                         => "Illegal optimization level $(n)!"
-      ("-h" || "--help",  nothing)                        => "Help!"
-      bad                                                 => "Unknown argument: $bad"
-   end
+    @match (arg, value) begin
+        ("-l",              lang),   if lang != nothing end => "Language set to $lang"
+        ("-o" || "--optim", n::Int),      if 0 < n <= 5 end => "Optimization level set to $n"
+        ("-o" || "--optim", n::Int)                         => "Illegal optimization level $(n)!"
+        ("-h" || "--help",  nothing)                        => "Help!"
+        bad                                                 => "Unknown argument: $bad"
+    end
 end
 
 @test parse_arg("-l", "eng")  == "Language set to eng"

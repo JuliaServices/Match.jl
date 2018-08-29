@@ -386,10 +386,10 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
                 expr = tests
             else
                 expr = :(if $tests
-                             $expr
-                         else
-                             $code
-                         end)
+                    $expr
+                else
+                    $code
+                end)
             end
 
             test_assign = [:($expr = $val) for (expr, val) in info.test_assign]
