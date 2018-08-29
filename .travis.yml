@@ -4,12 +4,10 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
+  - 1.0 
   - nightly
 notifications:
   email: false
-git:
-  depth: 99999999
 
 ## uncomment the following lines to allow failures on nightly julia
 ## (tests will run but not make your overall status red)

@@ -1,14 +1,12 @@
-Match.jl --- Advanced Pattern Matching for Julia
-================================================
+# Match.jl --- Advanced Pattern Matching for Julia
 
 This package provides both simple and advanced pattern matching capabilities for Julia. Features include:
 
--   Matching against almost any data type with a first-match policy
--   Deep matching within data types and matrices
--   Variable binding within matches
+- Matching against almost any data type with a first-match policy
+- Deep matching within data types and matrices
+- Variable binding within matches
 
-Installation
-============
+# Installation
 
 Use the Julia package manager. Within Julia, do:
 
@@ -16,8 +14,7 @@ Use the Julia package manager. Within Julia, do:
 Pkg.add("Match")
 ```
 
-Usage
-=====
+# Usage
 
 The package provides one macro, @match, which can be used as:
 
@@ -34,8 +31,7 @@ end
 
 Patterns can be values, regular expressions, type checks or constructors, tuples, or arrays, including multidimensional arrays. It is possible to supply variables inside pattern, which will be bound to corresponding values. This and other features are best seen with examples.
 
-Match Values
-------------
+## Match Values
 
 The easiest kind of matching to use is simply to match against values:
 
@@ -47,8 +43,7 @@ The easiest kind of matching to use is simply to match against values:
 end
 ```
 
-Match Types
------------
+## Match Types
 
 Julia already does a great job of this with functions and multiple dispatch, and it is generally be better to use those mechanisms when possible. But it can be done here:
 
@@ -77,8 +72,7 @@ julia> matchtype(2.0)
 Something unexpected
 ```
 
-Deep Matching of Composite Types
---------------------------------
+## Deep Matching of Composite Types
 
 One nice feature is the ability to match embedded types, as well as bind variables to components of those types:
 
@@ -120,8 +114,7 @@ julia> personinfo(Person("Linus", "Pauling",
 "Unknown person!"
 ```
 
-Alternatives and Guards
------------------------
+## Alternatives and Guards
 
 Alternatives allow a match against multiple patterns.
 
@@ -164,8 +157,7 @@ julia> parse_arg("--help")
 Help!
 ```
 
-Match Ranges
-------------
+## Match Ranges
 
 Borrowing a nice idea from pattern matching in Rust, pattern matching against ranges is also supported:
 
@@ -200,15 +192,13 @@ julia> num_match(3:10)
 "three to ten"
 ```
 
-Regular Expressions
--------------------
+## Regular Expressions
 
 Match.jl used to have complex regular expression handling, but it was implemented using `eval`, which is generally a bad idea and was the source of some undesirable behavior.
 
 With some work, it may be possible to reimplement, but it's unclear if this is a good idea yet.
 
-Deep Matching Against Arrays
-----------------------------
+## Deep Matching Against Arrays
 
 Arrays are intrinsic components of Julia. Match allows deep matching against arrays.
 
@@ -322,7 +312,7 @@ julia> @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])
  7  8  9
 ```
 
-### Match individual positions 
+### Match individual positions
 
 ```julia
 julia> @match([1 2; 3 4], [1 a; b c]);
@@ -388,14 +378,13 @@ julia> d
  6 8
 ```
 
-Notes/Gotchas
--------------
+## Notes/Gotchas
 
 There are a few useful things to be aware of when using Match.
 
 - Guards need a comma and an \`end\`:
 
-    ## Bad
+  ## Bad
 
         julia> _iseven(a) = @match a begin
                 n::Int if n%2 == 0 end => println("$n is even")
@@ -409,7 +398,7 @@ There are a few useful things to be aware of when using Match.
             end
         ERROR: syntax: invalid identifier name =>
 
-    ## Good
+  ## Good
 
         julia> _iseven(a) = @match a begin
                 n::Int, if n%2 == 0 end => println("$n is even")
@@ -467,13 +456,11 @@ There are a few useful things to be aware of when using Match.
             end
         end
 
-Examples
-========
+# Examples
 
 Here are a couple of additional examples.
 
-Mathematica-Inspired Sparse Array Constructor
----------------------------------------------
+## Mathematica-Inspired Sparse Array Constructor
 
 [Contributed by @benkj](https://github.com/kmsquire/Match.jl/issues/29)
 
@@ -511,8 +498,7 @@ Mathematica-Inspired Sparse Array Constructor
 >      0.0   0.0   3.0   0.0  14.0
 >      0.0   0.0   0.0   4.0   0.0
 
-Matching Exprs
---------------
+## Matching Exprs
 
 The `@match` macro can be used to match Julia expressions (`Expr` objects). One issue is that the [internal structure of Expr objects](http://docs.julialang.org/en/release-0.4/manual/metaprogramming/#program-representation) doesn't match their constructor exactly, so one has to put arguments in brackets, as well as capture the `typ` field of macros.
 
@@ -522,26 +508,24 @@ The following function is a nice example of matching expressions. It is used in 
 extract_name(x) = string(x)
 function extract_name(e::Expr)
     @match e begin
-        Expr(:type,      [_, name, _], _)     => name
-        Expr(:typealias, [name, _], _)        => name
-        Expr(:call,      [name, _...], _)     => name
-        Expr(:function,  [sig, _...], _)      => extract_name(sig)
-        Expr(:const,     [assn, _...], _)     => extract_name(assn)
-        Expr(:(=),       [fn, body, _...], _) => extract_name(fn)
-        Expr(expr_type,  _...)                => error("Can't extract name from ",
-                                                        expr_type, " expression:\n",
-                                                        "    $e\n")
+        Expr(:type,      [_, name, _])     => name
+        Expr(:typealias, [name, _])        => name
+        Expr(:call,      [name, _...])     => name
+        Expr(:function,  [sig, _...])      => extract_name(sig)
+        Expr(:const,     [assn, _...])     => extract_name(assn)
+        Expr(:(=),       [fn, body, _...]) => extract_name(fn)
+        Expr(expr_type,  _...)             => error("Can't extract name from ",
+                                                     expr_type, " expression:\n",
+                                                     "    $e\n")
     end
 end
 ```
 
-Inspiration
-===========
+# Inspiration
 
 The following pages on pattern matching in scala provided inspiration for the library:
 
--   <http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/>
--   <http://java.dzone.com/articles/scala-pattern-matching-case>
--   <http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/>
--   <http://docs.scala-lang.org/tutorials/tour/case-classes.html>
-
+- <http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/>
+- <http://java.dzone.com/articles/scala-pattern-matching-case>
+- <http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/>
+- <http://docs.scala-lang.org/tutorials/tour/case-classes.html>

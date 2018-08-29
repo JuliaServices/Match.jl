@@ -136,32 +136,32 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
 
             # choose most specific variable typing
             if expr1 == expr2 || !isexpr(expr2, :(::))
-                expr = expr1
+                condition_expr = expr1
             elseif !isexpr(expr1, :(::))
-                expr = expr2
+                condition_expr = expr2
             else
                 # here, both vars are typed, but with different types
                 # let the parser figure out the best typing
-                expr = var
+                condition_expr = var
             end
 
-            push!(info.assignments, (expr, :($g1 ? $val1 : $val2)))
+            push!(info.assignments, (condition_expr, :($g1 ? $val1 : $val2)))
         end
 
-        for (expr, val) in info1.assignments
-            vs = getvar(expr)
+        for (assignment_expr, assignment_val) in info1.assignments
+            vs = getvar(assignment_expr)
             if !(vs in sharedvars)
                 # here and below, we assign to nothing
                 # so the type info is removed
-                # TODO: move it to $val???
-                push!(info.assignments, (expr, :($g1 ? $val : nothing)))
+                # TODO: move it to $assignment_val???
+                push!(info.assignments, (assignment_expr, :($g1 ? $assignment_val : nothing)))
             end
         end
 
-        for (expr, val) in info2.assignments
-            vs = getvar(expr)
+        for (assignment_expr, assignment_val) in info2.assignments
+            vs = getvar(assignment_expr)
             if !(vs in sharedvars)
-                push!(info.assignments, (expr, :($g2 ? $val : nothing)))
+                push!(info.assignments, (assignment_expr, :($g2 ? $assignment_val : nothing)))
             end
         end
 
@@ -322,11 +322,30 @@ function ispair(m)
     return isexpr(m, :call) && (m.args[1] == :(=>))
 end
 
+function rewrite_pair(m)
+    # The parsing of
+    #   "expr, if a == b end => target"
+    # changed from
+    #  (expr, if a == b end) => target  # v0.6
+    # to
+    #  (expr, if a == b end => target)  # v0.7
+    #
+    # For now, we rewrite the expression to match v0.6
+    # (In the future, we'll switch to using "where")
+    if isexpr(m, :tuple) && length(m.args) == 2 && ispair(m.args[2])
+        target = m.args[2].args[3]
+        newtuple = Expr(:tuple, m.args[1], m.args[2].args[2])
+        return Expr(:call, :(=>), newtuple, target)
+    end
+    return m
+end
+
 function is_guarded_pair(m)
     return ispair(m) && length(m.args) == 3 && isexpr(m.args[2], :tuple) && isexpr(m.args[2].args[2], :if)
 end
 
 function gen_match_expr(v, e, code, use_let::Bool=true)
+    e = rewrite_pair(e)
     if ispair(e)
         info = MatchExprInfo()
 
@@ -386,10 +405,10 @@ function gen_match_expr(v, e, code, use_let::Bool=true)
                 expr = tests
             else
                 expr = :(if $tests
-                             $expr
-                         else
-                             $code
-                         end)
+                    $expr
+                else
+                    $code
+                end)
             end
 
             test_assign = [:($expr = $val) for (expr, val) in info.test_assign]
