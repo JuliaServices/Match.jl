@@ -154,8 +154,11 @@ end
 #
 # generate an optional let expression
 
-let_expr(expr, assignments::AbstractArray) =
-    length(assignments) > 0 ? Expr(:let, expr, assignments...) : expr
+function let_expr(expr, assignments::AbstractArray)
+    length(assignments) == 0 && return expr
+    assignment_block = Expr(:block, assignments...)
+    return Expr(:let, assignment_block, expr)
+end
 
 #
 # array_type_of
