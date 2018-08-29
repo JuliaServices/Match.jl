@@ -1,5 +1,5 @@
+using Test
 using Match
-using Base.Test
 
 include("testtypes.jl")
 
@@ -255,7 +255,7 @@ end
 
 # Zach Allaun's fizzbuzz (https://github.com/zachallaun/Match.jl#awesome-fizzbuzz)
 
-function fizzbuzz(range::Range)
+function fizzbuzz(range::AbstractRange)
     io = IOBuffer()
     for n in range
         @match (n % 3, n % 5) begin
