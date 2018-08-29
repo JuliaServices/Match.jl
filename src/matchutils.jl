@@ -5,11 +5,11 @@
 # ismatch
 #
 
-Base.ismatch{R <: Number}(r::Range{R}, s::Number) = s in r
-Base.ismatch{T}(r::Range{T}, s::T) = s in r
-Base.ismatch(c::Char, s::Number) = false
-Base.ismatch(s::Number, c::Char) = false
-Base.ismatch(r, s) = (r == s)
+ismatch(r::AbstractRange, s::Number) = s in r
+ismatch(c::Char, s::Number) = false
+ismatch(s::Number, c::Char) = false
+ismatch(r::Regex, s::AbstractString) = occursin(r, s)
+ismatch(r, s) = (r == s)
 
 #
 # slicedim
