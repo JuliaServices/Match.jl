@@ -5,7 +5,7 @@
 # ismatch
 #
 
-ismatch(r::AbstractRange, s::Number) = s in r
+ismatch(r::AbstractRange, s) = s in r
 ismatch(c::Char, s::Number) = false
 ismatch(s::Number, c::Char) = false
 ismatch(r::Regex, s::AbstractString) = occursin(r, s)

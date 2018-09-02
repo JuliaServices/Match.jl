@@ -321,6 +321,21 @@ end
 @test num_match("hi") == "something else"
 @test num_match('c') == "something else"
 
+function char_match(c)
+    @match c begin
+        'A':'Z' => "uppercase"
+        'a':'z' => "lowercase"
+        '0':'9' => "number"
+        _       => "other"
+    end
+end
+
+@test char_match('M') == "uppercase"
+@test char_match('n') == "lowercase"
+@test char_match('8') == "number"
+@test char_match(' ') == "other"
+@test char_match("8") == "other"
+@test char_match(8) == "other"
 
 # Interpolation of matches in quoted expressions
 test_interp(item) = @match item begin
