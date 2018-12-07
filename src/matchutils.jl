@@ -73,7 +73,7 @@ function getvars(e::Expr)
         getvars(e.args)
     end
 end
-getvars(es::AbstractArray) = union([getvars(e) for e in es]...)
+getvars(es::AbstractArray) = unique!(vcat([getvars(e) for e in es]...))
 
 #
 # getvar
