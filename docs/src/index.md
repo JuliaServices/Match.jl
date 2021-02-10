@@ -207,7 +207,7 @@ The following examples also demonstrate how Match can be used strictly for its e
 ### Extract first element, rest of vector
 
 ```julia
-julia> @match([1:4], [a,b...]);
+julia> @match([1:4...], [a,b...]);
 
 julia> a
 1
@@ -222,7 +222,7 @@ julia> b
 ### Match values at the beginning of a vector
 
 ```julia
-julia> @match([1:5], [1,2,a...])
+julia> @match([1:5...], [1,2,a...])
  3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
   3
   4
@@ -339,7 +339,7 @@ julia> b
 ### Match 3D arrays
 
 ```julia
-julia> m = reshape([1:8], (2,2,2))
+julia> m = reshape([1:8...], (2,2,2))
 2x2x2 Array{Int64,3}:
 [:, :, 1] =
  1 3
