@@ -1,6 +1,6 @@
 ### Match Expression Info
 
-const SymExpr = Union{Symbol,Expr}
+const SymExpr = Union{Symbol,Expr,Bool}
 const Assignment = Tuple{SymExpr,SymExpr}
 
 struct MatchExprInfo
@@ -109,8 +109,8 @@ function unapply(val, expr::Expr, syms, guardsyms, valsyms, info, array_checked:
         append!(info.test_assign, info1.test_assign)
         append!(info.test_assign, info2.test_assign)
 
-        if length(info1.assignments) > 0;  push!(info.test_assign, (g1, Symbol(false)));  end
-        if length(info2.assignments) > 0;  push!(info.test_assign, (g2, Symbol(false)));  end
+        if length(info1.assignments) > 0;  push!(info.test_assign, (g1, false));  end
+        if length(info2.assignments) > 0;  push!(info.test_assign, (g2, false));  end
 
         ### info.tests
 
