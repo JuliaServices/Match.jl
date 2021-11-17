@@ -1,6 +1,6 @@
 name = "Match"
 uuid = "7eb4fadd-790c-5f42-8a69-bfa0b872bfbf"
-version = "1.1.0"
+version = "1.2.0"
 author = "Kevin Squire <kevin.squire@gmail.com>"
 
 [compat]
