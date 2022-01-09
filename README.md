@@ -1,8 +1,6 @@
 [![Travis Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/2p04pa4wkume806f?svg=true)](https://ci.appveyor.com/project/kmsquire/match-jl)
 [![Test Coverage](https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master)](https://codecov.io/github/kmsquire/Match.jl?branch=master)
-[![PkgEval.jl Status on Julia 0.5](http://pkg.julialang.org/badges/Match_0.5.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.5)
-[![PkgEval.jl Status on Julia 0.6](http://pkg.julialang.org/badges/Match_0.6.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.6)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg)](https://kmsquire.github.io/Match.jl/latest)
 
 # Advanced Pattern Matching for Julia
