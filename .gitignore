@@ -1,4 +1,8 @@
-docs/build/
-docs/site/
+*.jl.*.cov
 *.jl.cov
 *.jl.mem
+Manifest.toml
+/docs/build/
+/docs/Manifest.toml
+/tmp/*
+.vscode

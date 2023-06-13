@@ -1,9 +1,7 @@
-[![Travis Build Status](https://travis-ci.org/kmsquire/Match.jl.svg?branch=master)](https://travis-ci.org/kmsquire/Match.jl)
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/2p04pa4wkume806f?svg=true)](https://ci.appveyor.com/project/kmsquire/match-jl)
-[![Test Coverage](https://codecov.io/github/kmsquire/Match.jl/coverage.svg?branch=master)](https://codecov.io/github/kmsquire/Match.jl?branch=master)
-[![PkgEval.jl Status on Julia 0.5](http://pkg.julialang.org/badges/Match_0.5.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.5)
-[![PkgEval.jl Status on Julia 0.6](http://pkg.julialang.org/badges/Match_0.6.svg)](http://pkg.julialang.org/?pkg=Match&ver=0.6)
-[![Documentation Status](https://img.shields.io/badge/docs-latest-blue.svg)](https://kmsquire.github.io/Match.jl/latest)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaServices.github.io/Match.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaServices.github.io/Match.jl/dev/)
+[![Build Status](https://github.com/JuliaServices/Match.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaServices/Match.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/JuliaServices/Match.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaServices/Match.jl)
 
 # Advanced Pattern Matching for Julia
 
@@ -40,6 +38,6 @@ The package provides one macro, `@match`, which can be used as:
 It is possible to supply variables inside pattern, which will be bound
 to corresponding values. 
 
-See the [documentation](http://kmsquire.github.io/Match.jl/latest/)
+See the [documentation](https://JuliaServices.github.io/Match.jl/stable/)
 for examples of this and other features.
 

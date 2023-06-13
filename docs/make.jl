@@ -1,19 +1,26 @@
+using Match
 using Documenter
-import Match
 
-makedocs(modules=[Match],
-    clean=false,
-    format=:html,
+DocMeta.setdocmeta!(Match, :DocTestSetup, :(using Match); recursive=true)
+
+makedocs(;
+    modules=[Match],
+    authors="Kevin Squire, Neal Gafter <neal@gafter.com> and contributors",
+    repo="https://github.com/JuliaServices/Match.jl/blob/{commit}{path}#{line}",
     sitename="Match.jl",
-    authors="Kevin Squire and contributors.",
+    format=Documenter.HTML(;
+        prettyurls=get(ENV, "CI", "false") == "true",
+        canonical="https://JuliaServices.github.io/Match.jl",
+        edit_link="main",
+        assets=String[],
+    ),
     pages=[
-        "Home" => "index.md"
+        "Home" => "index.md",
     ],
-    # Use clean URLs, unless built as a "local" build
-    html_prettyurls=!("local" in ARGS),)
+)
 
-deploydocs(repo="github.com/kmsquire/Match.jl.git",
-    target="build",
-    julia="0.6",
-    deps=nothing,
-    make=nothing,)
+deploydocs(;
+    repo="github.com/JuliaServices/Match.jl.git",
+    devbranch="main",
+    push_preview = true,
+)
