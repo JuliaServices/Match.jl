@@ -38,6 +38,6 @@ The package provides one macro, `@match`, which can be used as:
 It is possible to supply variables inside pattern, which will be bound
 to corresponding values. 
 
-See the [documentation](https://JuliaServices.github.io/Match.jl/stable/)
+See the [documentation](https://juliaservices.github.io/Match.jl/latest/)
 for examples of this and other features.
 
