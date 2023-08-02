@@ -1,5 +1,7 @@
 # Match.jl - Advanced Pattern Matching for Julia
 
+The Match.jl package is licensed under the MIT Expat License:
+
 Copyright (c) 2013-2023: Kevin Squire, RelationalAI, Inc, and contributors.
 
 Permission is hereby granted, free of charge, to any person obtaining
