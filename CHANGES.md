@@ -1,3 +1,10 @@
+v2.0.0 / 2023-08-02
+===================
+
+  * Complete overhaul of implementation from Rematch2.jl
+  * Code generation via an optimized decision automaton.
+  * Require Julia 1.5
+  * Note incompatibility: drops support for multidimensional arrays.
 
 v0.4.0 / 2017-07-11
 ==================
@@ -97,7 +104,7 @@ v0.0.3 / 2014-03-02
   * Improve code generation for testing constant values.
   * Update exports, remove @fmatch, rename _fmatch -> fmatch
   * Fix matrix matching, update contains->in usage
-  
+
   * Doc format updates
   * Fixes for ReadTheDocs/sphinx
 

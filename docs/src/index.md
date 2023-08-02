@@ -1,10 +1,16 @@
-# Match.jl --- Advanced Pattern Matching for Julia
+```@meta
+CurrentModule = Match
+```
 
-This package provides both simple and advanced pattern matching capabilities for Julia. Features include:
+# [Match.jl](https://github.com/JuliaServices/Match.jl) --- Advanced Pattern Matching for Julia
+
+This package provides both simple and advanced pattern matching capabilities for Julia.
+Features include:
 
 - Matching against almost any data type with a first-match policy
-- Deep matching within data types and matrices
+- Deep matching within data types and arrays
 - Variable binding within matches
+- Efficient code generation via a decision automaton.
 
 # Installation
 
@@ -16,22 +22,46 @@ Pkg.add("Match")
 
 # Usage
 
-The package provides one macro, @match, which can be used as:
+## Simple-pattern `@ismatch` macro
+
+The `@ismatch` macro tests if a value patches a given pattern, returning
+either `true` if it matches, or `false` if it does not.  When the pattern matches,
+the variables named in the pattern are bound and can be used.
+
+```julia-repl
+julia> using Match
+
+julia> @ismatch (1, 2) (x, y)
+true
+
+julia> x
+1
+
+julia> y
+2
+```
+
+## Multi-case `@match` macro
+
+The `@match` macro acts as a pattern-matching switch statement,
+in which each case has a pattern and a result for when that pattern matches.
+The first case that matches is the one that computes the result for the `@match`.
 
 ```julia
 using Match
-
 @match item begin
     pattern1              => result1
-    pattern2, if cond end => result2
+    pattern2 where cond   => result2
     pattern3 || pattern4  => result3
     _                     => default_result
 end
 ```
 
-Patterns can be values, regular expressions, type checks or constructors, tuples, or arrays, including multidimensional arrays. It is possible to supply variables inside pattern, which will be bound to corresponding values. This and other features are best seen with examples.
+Patterns can be values, regular expressions, type checks or constructors, tuples, or arrays.
+It is possible to supply variables inside a pattern, which will be bound to corresponding values.
+This and other features are best seen with examples.
 
-## Match Values
+### Match Values
 
 The easiest kind of matching to use is simply to match against values:
 
@@ -43,17 +73,29 @@ The easiest kind of matching to use is simply to match against values:
 end
 ```
 
-## Match Types
+Values can be computed expressions by using interpolation.  That is how to use `@match` with `@enum`s:
+
+```julia
+@enum Color Red Blue Greed
+@match item begin
+   $Red => "Red"
+   $Blue => "Blue"
+   $Greed => "Greed is the color of money"
+   _ => "Something else..."
+end
+```
+
+### Match Types
 
 Julia already does a great job of this with functions and multiple dispatch, and it is generally be better to use those mechanisms when possible. But it can be done here:
 
 ```julia
 julia> matchtype(item) = @match item begin
-           n::Int               => println("Integers are awesome!")
-           str::String          => println("Strings are the best")
-           m::Dict{Int, String} => println("Ints for Strings?")
-           d::Dict              => println("A Dict! Looking up a word?")
-           _                    => println("Something unexpected")
+           ::Int               => println("Integers are awesome!")
+           ::String            => println("Strings are the best")
+           ::Dict{Int, String} => println("Ints for Strings?")
+           ::Dict              => println("A Dict! Looking up a word?")
+           _                   => println("Something unexpected")
    end
 
 julia> matchtype(66)
@@ -72,7 +114,7 @@ julia> matchtype(2.0)
 Something unexpected
 ```
 
-## Deep Matching of Composite Types
+### Deep Matching of Composite Types
 
 One nice feature is the ability to match embedded types, as well as bind variables to components of those types:
 
@@ -114,7 +156,7 @@ julia> personinfo(Person("Linus", "Pauling",
 "Unknown person!"
 ```
 
-## Alternatives and Guards
+### Alternatives and Guards
 
 Alternatives allow a match against multiple patterns.
 
@@ -122,14 +164,14 @@ Guards allow a conditional match. They are not a standard part of Julia yet, so 
 
 ```julia
 function parse_arg(arg::String, value::Any=nothing)
-  @match (arg, value) begin
-    ("-l",              lang)    => println("Language set to $lang")
-    ("-o" || "--optim", n::Int),
-     if 0 < n <= 5 end           => println("Optimization level set to $n")
-    ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
-    ("-h" || "--help",  nothing) => println("Help!")
-    bad                          => println("Unknown argument: $bad")
-  end
+    @match (arg, value) begin
+        ("-l",              lang)    => println("Language set to $lang")
+        ("-o" || "--optim", n::Int),
+        if 0 < n <= 5 end            => println("Optimization level set to $n")
+        ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
+        ("-h" || "--help",  nothing) => println("Help!")
+        bad                          => println("Unknown argument: $bad")
+    end
 end
 
 julia> parse_arg("-l", "eng")
@@ -157,7 +199,22 @@ julia> parse_arg("--help")
 Help!
 ```
 
-## Match Ranges
+The alternative guard syntax `pattern where expression` can sometimes be easier to use.
+
+```julia
+function parse_arg(arg::String, value::Any=nothing)
+    @match (arg, value) begin
+        ("-l",              lang)    => println("Language set to $lang")
+        ("-o" || "--optim", n::Int) where 0 < n <= 5 =>
+                                        println("Optimization level set to $n")
+        ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
+        ("-h" || "--help",  nothing) => println("Help!")
+        bad                          => println("Unknown argument: $bad")
+    end
+end
+```
+
+### Match Ranges
 
 Borrowing a nice idea from pattern matching in Rust, pattern matching against ranges is also supported:
 
@@ -192,269 +249,117 @@ julia> num_match(3:10)
 "three to ten"
 ```
 
-## Regular Expressions
+### Regular Expressions
 
-Match.jl used to have complex regular expression handling, but it was implemented using `eval`, which is generally a bad idea and was the source of some undesirable behavior.
+A regular expression can be used as a pattern, and will match any string that satisfies the pattern.
 
-With some work, it may be possible to reimplement, but it's unclear if this is a good idea yet.
+Match.jl used to have complex regular expression handling, permitting the capturing of matched subpatterns.
+We are considering adding that back again.
 
 ## Deep Matching Against Arrays
 
-Arrays are intrinsic components of Julia. Match allows deep matching against arrays.
+Arrays are intrinsic components of Julia. Match allows deep matching against single-dimensional vectors.
+
+Match previously supported multidimensional arrays.  If there is sufficient demand, we'll add support for that again.
 
 The following examples also demonstrate how Match can be used strictly for its extraction/binding capabilities, by only matching against one pattern.
 
 ### Extract first element, rest of vector
 
 ```julia
-julia> @match([1:4], [a,b...]);
+julia> @ismatch 1:4 [a,b...]
+true
 
 julia> a
 1
 
 julia> b
-3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
- 2
- 3
- 4
+2:4
 ```
 
 ### Match values at the beginning of a vector
 
 ```julia
-julia> @match([1:5], [1,2,a...])
- 3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
-  3
-  4
-  5
+julia> @ismatch 1:5 [1,2,a...]
+true
+
+julia> a
+3:5
 ```
 
-### Match and collect columns
-
-```julia
-julia> @match([1 2 3; 4 5 6], [a b...]);
-
-julia> a
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 1
- 4
-
-julia> b
-2x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 2 3
- 5 6
-
-julia> @match([1 2 3; 4 5 6], [a b c]);
-
-julia> a
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 1
- 4
-
-julia> b
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 2
- 5
-
-julia> c
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 3
- 6
-
-julia> @match([1 2 3; 4 5 6], [[1,4] a b]);
-
-julia> a
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 2
- 5
-
-julia> b
-2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
- 3
- 6
-```
-
-### Match and collect rows
-
-```julia
-julia> @match([1 2 3; 4 5 6], [a, b]);
-
-julia> a
-1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 1 2 3
-
-julia> b
-1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 4 5 6
-
-julia> @match([1 2 3; 4 5 6; 7 8 9], [a, b...]);
-
-julia> a
-1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 1 2 3
-
-julia> b
-2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 4 5 6
- 7 8 9
-
-julia> @match([1 2 3; 4 5 6], [[1 2 3], a])
-1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 4  5  6
-
-julia> @match([1 2 3; 4 5 6], [1 2 3; a])
-1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 4  5  6
-
-julia> @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])
-2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 4  5  6
- 7  8  9
-```
-
-### Match individual positions
-
-```julia
-julia> @match([1 2; 3 4], [1 a; b c]);
-
-julia> a
-2
-
-julia> b
-3
-
-julia> c
-4
-
-julia> @match([1 2; 3 4], [1 a; b...]);
-
-julia> a
-2
-
-julia> b
-1x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
- 3 4
-```
-
-### Match 3D arrays
-
-```julia
-julia> m = reshape([1:8], (2,2,2))
-2x2x2 Array{Int64,3}:
-[:, :, 1] =
- 1 3
- 2 4
-
-[:, :, 2] =
- 5 7
- 6 8
-
-julia> @match(m, [a b]);
-
-julia> a
-2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
- 1 3
- 2 4
-
-julia> b
-2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
- 5 7
- 6 8
-
-julia> @match(m, [[1 a; b c] d]);
-
-julia> a
-3
-
-julia> b
-2
-
-julia> c
-4
-
-julia> d
-2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
- 5 7
- 6 8
-```
-
-## Notes/Gotchas
+### Notes/Gotchas
 
 There are a few useful things to be aware of when using Match.
 
-- Guards need a comma and an \`end\`:
+- `if` guards need a comma and an \`end\`:
 
-  ## Bad
+#### Bad
 
-        julia> _iseven(a) = @match a begin
-                n::Int if n%2 == 0 end => println("$n is even")
-                m::Int                 => println("$m is odd")
-            end
-        ERROR: syntax: extra token "if" after end of expression
-
-        julia> _iseven(a) = @match a begin
-                n::Int, if n%2 == 0 => println("$n is even")
-                m::Int              => println("$m is odd")
-            end
-        ERROR: syntax: invalid identifier name =>
-
-  ## Good
-
-        julia> _iseven(a) = @match a begin
-                n::Int, if n%2 == 0 end => println("$n is even")
-                m::Int                  => println("$m is odd")
-            end
-        # methods for generic function _iseven
-        _iseven(a) at none:1
-
-- Without a default match, the result is \`nothing\`:
-
-        julia> test(a) = @match a begin
-                    n::Int           => "Integer"
-                    m::FloatingPoint => "Float"
-                end
-
-        julia> test("Julia is great")
-
-        julia>
-
-- In Scala, \_ is a wildcard pattern which matches anything, and is not bound as a variable.
-
-  In Match for Julia, \_ can be used as a wildcard, and will be bound to the last use if it is referenced in the result expression:
-
-        julia> test(a) = @match a begin
-                    n::Int           => "Integer"
-                    _::FloatingPoint => "$_ is a Float"
-                    (_,_)            => "$_ is the second part of a tuple"
-                end
-
-        julia> test(1.0)
-        "1.0 is a Float"
-
-        julia> test((1,2))
-        "2 is the second part of a tuple"
-
-- Note that variables not referenced in the result expression will not be bound (e.g., `n` is never bound above). One small exception to this rule is that when "=&gt;" is not used, "\_" will not be assigned.
-
-- If you want to see the code generated for a macro, you can use \`macroexpand\`:
-
-        julia> macroexpand(:(@match(a, begin
-                                n::Int           => "Integer"
-                                    m::FloatingPoint => "Float"
-                                end))
-        quote  # REPL[1], line 2:
-            if isa(a,Int) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
-                "Integer"
-            else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
-                begin  # REPL[1], line 3:
-                    if isa(a,FloatingPoint) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
-                        "Float"
-                    else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
-                        nothing
-                    end
-                end
-            end
+    julia> _iseven(a) = @match a begin
+            n::Int if n%2 == 0 end => println("$n is even")
+            m::Int                 => println("$m is odd")
         end
+    ERROR: syntax: extra token "if" after end of expression
+
+    julia> _iseven(a) = @match a begin
+            n::Int, if n%2 == 0 => println("$n is even")
+            m::Int              => println("$m is odd")
+        end
+    ERROR: syntax: invalid identifier name =>
+
+#### Good
+
+    julia> _iseven(a) = @match a begin
+            n::Int, if n%2 == 0 end => println("$n is even")
+            m::Int                  => println("$m is odd")
+        end
+    # methods for generic function _iseven
+    _iseven(a) at none:1
+
+It is sometimes easier to use the `where` syntax for guards:
+
+    julia> _iseven(a) = @match a begin
+            n::Int where n%2 == 0   => println("$n is even")
+            m::Int                  => println("$m is odd")
+        end
+    # methods for generic function _iseven
+    _iseven(a) at none:1
+
+### `@match_return` macro
+
+    @match_return value
+
+Within the result value (to the right of the `=>`) part of a `@match` case,
+you can use the `@match_return` macro to return a result early, before the end of the
+block.  This is useful if you have a shortcut for computing the result in some cases.
+You can think of it as a `return` statement for the `@match` macro.
+
+Use of this macro anywhere else will result in an error.
+
+### `@match_fail` macros
+
+    @match_fail
+
+Inside the result part of a `@match` case, you can cause the case to fail as
+if the corresponding pattern did not match.  The `@match` statement will resume
+attempting to match the following cases.  This is useful if you want to write some
+complex code that would be awkward to express as a guard.
+
+Use of this macro anywhere else will result in an error.
+
+## single-case `@match` macro
+
+    @match pattern = value
+
+Returns the value if it matches the pattern, and binds any pattern variables.
+Otherwise, throws `MatchFailure`.
+
+## `ismatch` macro
+
+    @ismatch value pattern
+
+Returns `true` if `value` matches `pattern`, `false` otherwise.  When returning `true`,
+binds the pattern variables in the enclosing scope.
 
 # Examples
 
@@ -462,7 +367,7 @@ Here are a couple of additional examples.
 
 ## Mathematica-Inspired Sparse Array Constructor
 
-[Contributed by @benkj](https://github.com/kmsquire/Match.jl/issues/29)
+[Contributed by @benkj](https://github.com/JuliaServices/Match.jl/issues/29)
 
 > I've realized that `Match.jl` is perfect for creating in Julia an equivalent of [SparseArray](https://reference.wolfram.com/language/ref/SparseArray.html) which I find quite useful in Mathematica.
 >
@@ -529,3 +434,16 @@ The following pages on pattern matching in scala provided inspiration for the li
 - <http://java.dzone.com/articles/scala-pattern-matching-case>
 - <http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/>
 - <http://docs.scala-lang.org/tutorials/tour/case-classes.html>
+
+The following paper on pattern-matching inspired the automaton approach to code generation:
+
+- <https://www.cs.tufts.edu/~nr/cs257/archive/norman-ramsey/match.pdf>
+
+# API Documentation
+
+```@index
+```
+
+```@autodocs
+Modules = [Match]
+```
