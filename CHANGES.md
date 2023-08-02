@@ -1,7 +1,7 @@
 v2.0.0 / 2023-08-02
 ===================
 
-  * Complete overhaul of implementation from Rematch2.jl
+  * Complete overhaul of implementation (taken from Rematch2.jl)
   * Code generation via an optimized decision automaton.
   * Require Julia 1.5
   * Note incompatibility: drops support for multidimensional arrays.
