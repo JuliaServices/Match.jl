@@ -1,5 +1,5 @@
 [deps]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReTest = "e0db7c4e-2690-44b9-bad6-7687da720f89"
-Match = "351a7294-9038-49b6-b9cf-e076b05af63f"
+Match = "7eb4fadd-790c-5f42-8a69-bfa0b872bfbf"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
