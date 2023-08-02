@@ -249,11 +249,7 @@ end
 
 # const fields only suppored >= Julia 1.8
 macro _const(x)
-    if VERSION >= v"1.8"
-        Expr(:const, esc(x))
-    else
-        esc(x)
-    end
+    (VERSION >= v"1.8") ? Expr(:const, esc(x)) : esc(x)
 end
 
 is_expr(@nospecialize(e), head::Symbol) = e isa Expr && e.head == head
