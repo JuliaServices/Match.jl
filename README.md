@@ -8,7 +8,7 @@
 Features:
 
 * Matching against almost any data type with a first-match policy
-* Deep matching within data types and arrays
+* Deep matching within data types, tuples, and vectors
 * Variable binding within matches
 * Produces a decision automaton to avoid repeated tests between patterns.
 

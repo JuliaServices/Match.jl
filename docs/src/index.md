@@ -8,7 +8,7 @@ This package provides both simple and advanced pattern matching capabilities for
 Features include:
 
 - Matching against almost any data type with a first-match policy
-- Deep matching within data types and arrays
+- Deep matching within data types, tuples, and vectors
 - Variable binding within matches
 - Efficient code generation via a decision automaton.
 
