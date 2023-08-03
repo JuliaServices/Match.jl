@@ -1,4 +1,5 @@
 *.jl.*.cov
+*.jl.*.mem
 *.jl.cov
 *.jl.mem
 Manifest.toml
@@ -6,3 +7,6 @@ Manifest.toml
 /docs/Manifest.toml
 /tmp/*
 .vscode
+.DS_Store
+._*
+tmp
