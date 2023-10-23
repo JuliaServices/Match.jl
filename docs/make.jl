@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(Match, :DocTestSetup, :(using Match); recursive=true)
 
 makedocs(;
     modules=[Match],
-    authors="Neal Gafter <neal.gafter@relational.ai>, Kevin Squire <kevin.squire@gmail.com>, and contributors",
+    authors="Neal Gafter <neal@gafter.com>, Kevin Squire <kevin.squire@gmail.com>, and contributors",
     repo="https://github.com/JuliaServices/Match.jl/blob/{commit}{path}#{line}",
     sitename="Match.jl",
     format=Documenter.HTML(;
