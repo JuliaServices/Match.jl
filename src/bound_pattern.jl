@@ -56,6 +56,9 @@ struct BoundExpression
     function BoundExpression(location::LineNumberNode,
         source::Any,
         assignments::ImmutableDict{Symbol, Symbol} = ImmutableDict{Symbol, Symbol}())
+        for (k, v) in assignments
+            @assert v !== unusable_variable
+        end
         new(location, source, assignments)
     end
 end

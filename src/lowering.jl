@@ -6,7 +6,7 @@ pattern_matches_value(r::Regex, s::AbstractString) = occursin(r, s)
 
 function assignments(assigned::ImmutableDict{Symbol, Symbol})
     # produce a list of assignments to be splatted into the caller
-    return (:($patvar = $resultsym) for (patvar, resultsym) in assigned)
+    return (:($patvar = $resultsym) for (patvar, resultsym) in assigned if resultsym !== unusable_variable)
 end
 
 function code(e::BoundExpression)

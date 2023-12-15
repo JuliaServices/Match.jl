@@ -371,10 +371,13 @@ end
         (1, a && (1,b)) => (a,b)
     end) == ((2,3),3)
 
-    # only vars that exist in all branches can be accessed
-    @test_throws UndefVarError(:y) @match (1,(2,3)) begin
-      (1, (x,:nope) || (2,y)) => y
-    end
+    # Only pattern variables that exist in all branches can be accessed.
+    # This is now a bind-time error. A test for that is in
+    # matchtests.jl.
+    #
+    # @test_throws UndefVarError(:y) @match (1,(2,3)) begin
+    #   (1, (x,:nope) || (2,y)) => y
+    # end
 end
 
 @testset "Splats" begin
