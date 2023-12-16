@@ -76,7 +76,8 @@ file = Symbol(@__FILE__)
                 @test ex isa LoadError
                 e = ex.error
                 @test e isa ErrorException
-                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `UndefVarError(:Unknown)`)."
+                err = (VERSION < v"1.11-") ? UndefVarError(:Unknown) : UndefVarError(:Unknown, @__MODULE__)
+                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `$err`)."
             end
         end
     end
@@ -454,7 +455,8 @@ end
     end
 
     # nested guards can't use later bindings
-    @test_throws UndefVarError(:y) @match [2,1] begin
+    err = (VERSION < v"1.11-") ? UndefVarError(:y) : UndefVarError(:y, @__MODULE__)
+    @test_throws err @match [2,1] begin
       [x where y > x, y ] => (x,y)
     end
 end
