@@ -147,8 +147,6 @@ function is_possible_type_name(t::Expr)
         all(is_possible_type_name, t.args)
 end
 
-const unusable_variable = gensym("#a variable that was previously used on one side (only) of a disjunction");
-
 function bind_pattern!(
     location::LineNumberNode,
     source::Any,
@@ -186,10 +184,6 @@ function bind_pattern!(
         if haskey(assigned, varsymbol)
             # previously introduced variable.  Get the symbol holding its value
             var_value = assigned[varsymbol]
-            if var_value === unusable_variable
-                error("$(location.file):$(location.line): May not reuse variable name `$varsymbol` " *
-                    "after it has previously been used on only one side of a disjunction.")
-            end
             bound_expression = BoundExpression(
                 location, source, ImmutableDict{Symbol, Symbol}(varsymbol, var_value))
             pattern = BoundIsMatchTestPattern(
@@ -316,9 +310,6 @@ function bind_pattern!(
             v2 = assigned2[key]
             if v1 == v2
                 assigned = ImmutableDict{Symbol, Symbol}(assigned, key, v1)
-            elseif v1 === unusable_variable || v2 === unusable_variable
-                # A previously unusable variable remains unusable
-                assigned = ImmutableDict{Symbol, Symbol}(assigned, key, unusable_variable)
             else
                 # Every phi gets its own distinct variable.  That ensures we do not
                 # share them between patterns.
@@ -336,16 +327,6 @@ function bind_pattern!(
                 assigned = ImmutableDict{Symbol, Symbol}(assigned, key, temp)
             end
         end
-
-        # compute variables that were assigned on only one side of the disjunction and mark
-        # them (by using a designated value in `assigned`) so we can give an error message
-        # when a variable that is defined on only one side of a disjunction is used again
-        # later in the enclosing pattern.
-        one_only = setdiff(union(keys(assigned1), keys(assigned2)), both)
-        for key in one_only
-            assigned = ImmutableDict{Symbol, Symbol}(assigned, key, unusable_variable)
-        end
-
         pattern = BoundOrPattern(location, source, BoundPattern[bp1, bp2])
 
     elseif is_expr(source, :call, 3) && source.args[1] == :|
@@ -537,11 +518,6 @@ function bind_expression(location::LineNumberNode, expr, assigned::ImmutableDict
     for v in used
         tmp = get(assigned, v, nothing)
         @assert tmp !== nothing
-        if tmp === unusable_variable
-            # The user is attempting to use a variable that was defined on only
-            # one side of a disjunction.  That is an error.
-            error("$(location.file):$(location.line): The pattern variable `$v` cannot be used because it was defined on only one side of a disjunction.")
-        end
         push!(assignments.args, Expr(:(=), v, tmp))
         new_assigned = ImmutableDict(new_assigned, v => tmp)
     end

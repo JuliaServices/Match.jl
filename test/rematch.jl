@@ -76,8 +76,7 @@ file = Symbol(@__FILE__)
                 @test ex isa LoadError
                 e = ex.error
                 @test e isa ErrorException
-                err = (VERSION < v"1.11-") ? UndefVarError(:Unknown) : UndefVarError(:Unknown, @__MODULE__)
-                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `$err`)."
+                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `UndefVarError(:Unknown)`)."
             end
         end
     end
@@ -372,13 +371,10 @@ end
         (1, a && (1,b)) => (a,b)
     end) == ((2,3),3)
 
-    # Only pattern variables that exist in all branches can be accessed.
-    # This is now a bind-time error. A test for that is in
-    # matchtests.jl.
-    #
-    # @test_throws UndefVarError(:y) @match (1,(2,3)) begin
-    #   (1, (x,:nope) || (2,y)) => y
-    # end
+    # only vars that exist in all branches can be accessed
+    @test_throws UndefVarError(:y) @match (1,(2,3)) begin
+      (1, (x,:nope) || (2,y)) => y
+    end
 end
 
 @testset "Splats" begin
@@ -455,8 +451,7 @@ end
     end
 
     # nested guards can't use later bindings
-    err = (VERSION < v"1.11-") ? UndefVarError(:y) : UndefVarError(:y, @__MODULE__)
-    @test_throws err @match [2,1] begin
+    @test_throws UndefVarError(:y) @match [2,1] begin
       [x where y > x, y ] => (x,y)
     end
 end
