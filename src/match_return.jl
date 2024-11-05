@@ -76,24 +76,30 @@ end
 # in which `MatchFailure` is a possible result.
 #
 function adjust_case_for_return_macro(__module__, location, pattern, result, predeclared_temps)
-    value = gensym("value")
-    label = gensym("label")
+    value = nothing
+    label = nothing
     found_early_exit::Bool = false
+    function make_label()
+        if !found_early_exit
+            value = gensym("value")
+            label = gensym("label")
+            found_early_exit = true
+        end
+    end
     function adjust_top(p)
         is_expr(p, :macrocall) || return p
         if length(p.args) == 3 &&
             (p.args[1] == :var"@match_return"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_return")))
             # :(@match_return e) -> :($value = $e; @goto $label)
-            found_early_exit = true
+            make_label()
             return Expr(:block, p.args[2], :($value = $(p.args[3])), :(@goto $label))
         elseif length(p.args) == 2 &&
             (p.args[1] == :var"@match_fail"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_fail")))
             # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
-            found_early_exit = true
+            make_label()
             return Expr(:block, p.args[2], :($value = $MatchFailure), :(@goto $label))
         elseif length(p.args) == 4 &&
-            (p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")) ||
-             p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")))
+            (p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")))
             # Nested uses of @match should be treated as independent
             return macroexpand(__module__, p)
         else

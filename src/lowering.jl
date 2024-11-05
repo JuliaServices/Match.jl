@@ -10,7 +10,7 @@ function assignments(assigned::ImmutableDict{Symbol, Symbol})
 end
 
 function code(e::BoundExpression)
-    value = Expr(:block, e.location, e.source)
+    value = Expr(:block, e.location, source(e))
     assignments = Expr(:block, (:($k = $v) for (k, v) in e.assignments)...)
     return Expr(:let, assignments, value)
 end
@@ -31,15 +31,16 @@ end
 function code(bound_pattern::BoundTypeTestPattern, binder::BinderContext)
     # We assert that the type is invariant.  Because this mutates binder.assertions,
     # you must take the value of binder.assertions after all calls to the generated code.
-    if bound_pattern.source != bound_pattern.type && !(bound_pattern.source in binder.asserted_types)
-        test = :($(bound_pattern.type) == $(bound_pattern.source))
+    src = source(bound_pattern)
+    if src != bound_pattern.type && !(src in binder.asserted_types)
+        test = :($(bound_pattern.type) == $src)
         thrown = :($throw($AssertionError($string($(string(bound_pattern.location.file)),
             ":", $(bound_pattern.location.line),
-            ": The type syntax `::", $(string(bound_pattern.source)), "` bound to type ",
+            ": The type syntax `::", $(string(src)), "` bound to type ",
             $string($(bound_pattern.type)), " at macro expansion time but ",
-             $(bound_pattern.source), " later."))))
+             $src, " later."))))
         push!(binder.assertions, Expr(:block, bound_pattern.location, :($test || $thrown)))
-        push!(binder.asserted_types, bound_pattern.source)
+        push!(binder.asserted_types, )
     end
     :($(bound_pattern.input) isa $(bound_pattern.type))
 end
