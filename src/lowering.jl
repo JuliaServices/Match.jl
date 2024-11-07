@@ -10,7 +10,7 @@ function assignments(assigned::ImmutableDict{Symbol, Symbol})
 end
 
 function code(e::BoundExpression)
-    value = Expr(:block, e.location, source(e))
+    value = Expr(:block, e.location, code_for_expression(source(e)))
     assignments = Expr(:block, (:($k = $v) for (k, v) in e.assignments)...)
     return Expr(:let, assignments, value)
 end
