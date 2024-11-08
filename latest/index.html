@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Match.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/highlightjs/default.css" rel="stylesheet" type="text/css"/><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Match.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" action="search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href>Home</a><ul class="internal"><li class="toplevel"><a class="toctext" href="#Installation-1">Installation</a></li><li class="toplevel"><a class="toctext" href="#Usage-1">Usage</a></li><li><a class="toctext" href="#Match-Values-1">Match Values</a></li><li><a class="toctext" href="#Match-Types-1">Match Types</a></li><li><a class="toctext" href="#Deep-Matching-of-Composite-Types-1">Deep Matching of Composite Types</a></li><li><a class="toctext" href="#Alternatives-and-Guards-1">Alternatives and Guards</a></li><li><a class="toctext" href="#Match-Ranges-1">Match Ranges</a></li><li><a class="toctext" href="#Regular-Expressions-1">Regular Expressions</a></li><li><a class="toctext" href="#Deep-Matching-Against-Arrays-1">Deep Matching Against Arrays</a></li><li><a class="toctext" href="#Notes/Gotchas-1">Notes/Gotchas</a></li><li class="toplevel"><a class="toctext" href="#Examples-1">Examples</a></li><li><a class="toctext" href="#Mathematica-Inspired-Sparse-Array-Constructor-1">Mathematica-Inspired Sparse Array Constructor</a></li><li><a class="toctext" href="#Matching-Exprs-1">Matching Exprs</a></li><li class="toplevel"><a class="toctext" href="#Inspiration-1">Inspiration</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Home</a></li></ul><a class="edit-page" href="https://github.com/kmsquire/Match.jl/tree/89cf64874dbd08e5ebc6337182291ca6258b08db/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Home</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Match.jl-–-Advanced-Pattern-Matching-for-Julia-1" href="#Match.jl-–-Advanced-Pattern-Matching-for-Julia-1">Match.jl –- Advanced Pattern Matching for Julia</a></h1><p>This package provides both simple and advanced pattern matching capabilities for Julia. Features include:</p><ul><li><p>Matching against almost any data type with a first-match policy</p></li><li><p>Deep matching within data types and matrices</p></li><li><p>Variable binding within matches</p></li></ul><h1><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h1><p>Use the Julia package manager. Within Julia, do:</p><pre><code class="language-julia">Pkg.add(&quot;Match&quot;)</code></pre><h1><a class="nav-anchor" id="Usage-1" href="#Usage-1">Usage</a></h1><p>The package provides one macro, @match, which can be used as:</p><pre><code class="language-julia">using Match
+
+@match item begin
+    pattern1              =&gt; result1
+    pattern2, if cond end =&gt; result2
+    pattern3 || pattern4  =&gt; result3
+    _                     =&gt; default_result
+end</code></pre><p>Patterns can be values, regular expressions, type checks or constructors, tuples, or arrays, including multidimensional arrays. It is possible to supply variables inside pattern, which will be bound to corresponding values. This and other features are best seen with examples.</p><h2><a class="nav-anchor" id="Match-Values-1" href="#Match-Values-1">Match Values</a></h2><p>The easiest kind of matching to use is simply to match against values:</p><pre><code class="language-julia">@match item begin
+   1 =&gt; &quot;one&quot;
+   2 =&gt; &quot;two&quot;
+   _ =&gt; &quot;Something else...&quot;
+end</code></pre><h2><a class="nav-anchor" id="Match-Types-1" href="#Match-Types-1">Match Types</a></h2><p>Julia already does a great job of this with functions and multiple dispatch, and it is generally be better to use those mechanisms when possible. But it can be done here:</p><pre><code class="language-julia">julia&gt; matchtype(item) = @match item begin
+           n::Int               =&gt; println(&quot;Integers are awesome!&quot;)
+           str::String          =&gt; println(&quot;Strings are the best&quot;)
+           m::Dict{Int, String} =&gt; println(&quot;Ints for Strings?&quot;)
+           d::Dict              =&gt; println(&quot;A Dict! Looking up a word?&quot;)
+           _                    =&gt; println(&quot;Something unexpected&quot;)
+   end
+
+julia&gt; matchtype(66)
+Integers are awesome!
+
+julia&gt; matchtype(&quot;abc&quot;)
+Strings are the best
+
+julia&gt; matchtype(Dict{Int, String}(1=&gt;&quot;a&quot;,2=&gt;&quot;b&quot;))
+Ints for Strings?
+
+julia&gt; matchtype(Dict())
+A Dict! Looking up a word?
+
+julia&gt; matchtype(2.0)
+Something unexpected</code></pre><h2><a class="nav-anchor" id="Deep-Matching-of-Composite-Types-1" href="#Deep-Matching-of-Composite-Types-1">Deep Matching of Composite Types</a></h2><p>One nice feature is the ability to match embedded types, as well as bind variables to components of those types:</p><pre><code class="language-julia">struct Address
+    street::String
+    city::String
+    zip::String
+end
+
+struct Person
+    firstname::String
+    lastname::String
+    address::Address
+end
+
+personinfo(person) = @match person begin
+  Person(&quot;Julia&quot;, lname,  _)           =&gt; &quot;Found Julia $lname&quot;
+  Person(fname, &quot;Julia&quot;, _)            =&gt; &quot;$fname Julia was here!&quot;
+  Person(fname, lname,
+         Address(_, &quot;Cambridge&quot;, zip)) =&gt; &quot;$fname $lname lives in zip $zip&quot;
+  Person(_...)                         =&gt; &quot;Unknown person!&quot;
+end
+
+julia&gt; personinfo(Person(&quot;Julia&quot;, &quot;Robinson&quot;,
+                  Address(&quot;450 Serra Mall&quot;, &quot;Stanford&quot;, &quot;94305&quot;)))
+&quot;Found Julia Robinson&quot;
+
+julia&gt; personinfo(Person(&quot;Gaston&quot;, &quot;Julia&quot;,
+                  Address(&quot;1 rue Victor Cousin&quot;, &quot;Paris&quot;, &quot;75005&quot;)))
+&quot;Gaston Julia was here!&quot;
+
+julia&gt; personinfo(Person(&quot;Edwin&quot;, &quot;Aldrin&quot;,
+                  Address(&quot;350 Memorial Dr&quot;, &quot;Cambridge&quot;, &quot;02139&quot;)))
+&quot;Edwin Aldrin lives in zip 02139&quot;
+
+julia&gt; personinfo(Person(&quot;Linus&quot;, &quot;Pauling&quot;,
+                  Address(&quot;1200 E California Blvd&quot;, &quot;Pasadena&quot;, &quot;91125&quot;)))
+&quot;Unknown person!&quot;</code></pre><h2><a class="nav-anchor" id="Alternatives-and-Guards-1" href="#Alternatives-and-Guards-1">Alternatives and Guards</a></h2><p>Alternatives allow a match against multiple patterns.</p><p>Guards allow a conditional match. They are not a standard part of Julia yet, so to get the parser to accept them requires that they are preceded by a comma and end with &quot;end&quot;:</p><pre><code class="language-julia">function parse_arg(arg::String, value::Any=nothing)
+  @match (arg, value) begin
+    (&quot;-l&quot;,              lang)    =&gt; println(&quot;Language set to $lang&quot;)
+    (&quot;-o&quot; || &quot;--optim&quot;, n::Int),
+     if 0 &lt; n &lt;= 5 end           =&gt; println(&quot;Optimization level set to $n&quot;)
+    (&quot;-o&quot; || &quot;--optim&quot;, n::Int)  =&gt; println(&quot;Illegal optimization level $(n)!&quot;)
+    (&quot;-h&quot; || &quot;--help&quot;,  nothing) =&gt; println(&quot;Help!&quot;)
+    bad                          =&gt; println(&quot;Unknown argument: $bad&quot;)
+  end
+end
+
+julia&gt; parse_arg(&quot;-l&quot;, &quot;eng&quot;)
+Language set to eng
+
+julia&gt; parse_arg(&quot;-l&quot;)
+Unknown argument: (&quot;-l&quot;,nothing)
+
+julia&gt; parse_arg(&quot;-o&quot;, 4)
+Optimization level set to 4
+
+julia&gt; parse_arg(&quot;--optim&quot;, 5)
+Optimization level set to 5
+
+julia&gt; parse_arg(&quot;-o&quot;, 0)
+Illegal optimization level 0!
+
+julia&gt; parse_arg(&quot;-o&quot;, 1.0)
+Unknown argument: (&quot;-o&quot;,1.0)
+
+julia&gt; parse_arg(&quot;-h&quot;)
+Help!
+
+julia&gt; parse_arg(&quot;--help&quot;)
+Help!</code></pre><h2><a class="nav-anchor" id="Match-Ranges-1" href="#Match-Ranges-1">Match Ranges</a></h2><p>Borrowing a nice idea from pattern matching in Rust, pattern matching against ranges is also supported:</p><pre><code class="language-julia">julia&gt; function num_match(n)
+           @match n begin
+               0      =&gt; &quot;zero&quot;
+               1 || 2 =&gt; &quot;one or two&quot;
+               3:10   =&gt; &quot;three to ten&quot;
+               _      =&gt; &quot;something else&quot;
+           end
+       end
+num_match (generic function with 1 method)
+
+julia&gt; num_match(0)
+&quot;zero&quot;
+
+julia&gt; num_match(2)
+&quot;one or two&quot;
+
+julia&gt; num_match(12)
+&quot;something else&quot;
+
+julia&gt; num_match(&#39;c&#39;)
+&quot;something else&quot;</code></pre><p>Note that a range can still match another range exactly:</p><pre><code class="language-julia">julia&gt; num_match(3:10)
+&quot;three to ten&quot;</code></pre><h2><a class="nav-anchor" id="Regular-Expressions-1" href="#Regular-Expressions-1">Regular Expressions</a></h2><p>Match.jl used to have complex regular expression handling, but it was implemented using <code>eval</code>, which is generally a bad idea and was the source of some undesirable behavior.</p><p>With some work, it may be possible to reimplement, but it&#39;s unclear if this is a good idea yet.</p><h2><a class="nav-anchor" id="Deep-Matching-Against-Arrays-1" href="#Deep-Matching-Against-Arrays-1">Deep Matching Against Arrays</a></h2><p>Arrays are intrinsic components of Julia. Match allows deep matching against arrays.</p><p>The following examples also demonstrate how Match can be used strictly for its extraction/binding capabilities, by only matching against one pattern.</p><h3><a class="nav-anchor" id="Extract-first-element,-rest-of-vector-1" href="#Extract-first-element,-rest-of-vector-1">Extract first element, rest of vector</a></h3><pre><code class="language-julia">julia&gt; @match([1:4], [a,b...]);
+
+julia&gt; a
+1
+
+julia&gt; b
+3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
+ 2
+ 3
+ 4</code></pre><h3><a class="nav-anchor" id="Match-values-at-the-beginning-of-a-vector-1" href="#Match-values-at-the-beginning-of-a-vector-1">Match values at the beginning of a vector</a></h3><pre><code class="language-julia">julia&gt; @match([1:5], [1,2,a...])
+ 3-element SubArray{Int64,1,Array{Int64,1},(Range1{Int64},)}:
+  3
+  4
+  5</code></pre><h3><a class="nav-anchor" id="Match-and-collect-columns-1" href="#Match-and-collect-columns-1">Match and collect columns</a></h3><pre><code class="language-julia">julia&gt; @match([1 2 3; 4 5 6], [a b...]);
+
+julia&gt; a
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 1
+ 4
+
+julia&gt; b
+2x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 2 3
+ 5 6
+
+julia&gt; @match([1 2 3; 4 5 6], [a b c]);
+
+julia&gt; a
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 1
+ 4
+
+julia&gt; b
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 2
+ 5
+
+julia&gt; c
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 3
+ 6
+
+julia&gt; @match([1 2 3; 4 5 6], [[1,4] a b]);
+
+julia&gt; a
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 2
+ 5
+
+julia&gt; b
+2-element SubArray{Int64,1,Array{Int64,2},(Range1{Int64},Int64)}:
+ 3
+ 6</code></pre><h3><a class="nav-anchor" id="Match-and-collect-rows-1" href="#Match-and-collect-rows-1">Match and collect rows</a></h3><pre><code class="language-julia">julia&gt; @match([1 2 3; 4 5 6], [a, b]);
+
+julia&gt; a
+1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 1 2 3
+
+julia&gt; b
+1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 4 5 6
+
+julia&gt; @match([1 2 3; 4 5 6; 7 8 9], [a, b...]);
+
+julia&gt; a
+1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 1 2 3
+
+julia&gt; b
+2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 4 5 6
+ 7 8 9
+
+julia&gt; @match([1 2 3; 4 5 6], [[1 2 3], a])
+1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 4  5  6
+
+julia&gt; @match([1 2 3; 4 5 6], [1 2 3; a])
+1x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 4  5  6
+
+julia&gt; @match([1 2 3; 4 5 6; 7 8 9], [1 2 3; a...])
+2x3 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 4  5  6
+ 7  8  9</code></pre><h3><a class="nav-anchor" id="Match-individual-positions-1" href="#Match-individual-positions-1">Match individual positions</a></h3><pre><code class="language-julia">julia&gt; @match([1 2; 3 4], [1 a; b c]);
+
+julia&gt; a
+2
+
+julia&gt; b
+3
+
+julia&gt; c
+4
+
+julia&gt; @match([1 2; 3 4], [1 a; b...]);
+
+julia&gt; a
+2
+
+julia&gt; b
+1x2 SubArray{Int64,2,Array{Int64,2},(Range1{Int64},Range1{Int64})}:
+ 3 4</code></pre><h3><a class="nav-anchor" id="Match-3D-arrays-1" href="#Match-3D-arrays-1">Match 3D arrays</a></h3><pre><code class="language-julia">julia&gt; m = reshape([1:8], (2,2,2))
+2x2x2 Array{Int64,3}:
+[:, :, 1] =
+ 1 3
+ 2 4
+
+[:, :, 2] =
+ 5 7
+ 6 8
+
+julia&gt; @match(m, [a b]);
+
+julia&gt; a
+2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
+ 1 3
+ 2 4
+
+julia&gt; b
+2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
+ 5 7
+ 6 8
+
+julia&gt; @match(m, [[1 a; b c] d]);
+
+julia&gt; a
+3
+
+julia&gt; b
+2
+
+julia&gt; c
+4
+
+julia&gt; d
+2x2 SubArray{Int64,2,Array{Int64,3},(Range1{Int64},Range1{Int64},Int64)}:
+ 5 7
+ 6 8</code></pre><h2><a class="nav-anchor" id="Notes/Gotchas-1" href="#Notes/Gotchas-1">Notes/Gotchas</a></h2><p>There are a few useful things to be aware of when using Match.</p><ul><li><p>Guards need a comma and an `end`:</p><h2>Bad</h2><pre><code class="language-none">  julia&gt; _iseven(a) = @match a begin
+          n::Int if n%2 == 0 end =&gt; println(&quot;$n is even&quot;)
+          m::Int                 =&gt; println(&quot;$m is odd&quot;)
+      end
+  ERROR: syntax: extra token &quot;if&quot; after end of expression
+
+  julia&gt; _iseven(a) = @match a begin
+          n::Int, if n%2 == 0 =&gt; println(&quot;$n is even&quot;)
+          m::Int              =&gt; println(&quot;$m is odd&quot;)
+      end
+  ERROR: syntax: invalid identifier name =&gt;</code></pre><h2>Good</h2><pre><code class="language-none">  julia&gt; _iseven(a) = @match a begin
+          n::Int, if n%2 == 0 end =&gt; println(&quot;$n is even&quot;)
+          m::Int                  =&gt; println(&quot;$m is odd&quot;)
+      end
+  # methods for generic function _iseven
+  _iseven(a) at none:1</code></pre></li><li><p>Without a default match, the result is `nothing`:</p><pre><code class="language-none">  julia&gt; test(a) = @match a begin
+              n::Int           =&gt; &quot;Integer&quot;
+              m::FloatingPoint =&gt; &quot;Float&quot;
+          end
+
+  julia&gt; test(&quot;Julia is great&quot;)
+
+  julia&gt;</code></pre></li><li><p>In Scala, _ is a wildcard pattern which matches anything, and is not bound as a variable.</p><p>In Match for Julia, _ can be used as a wildcard, and will be bound to the last use if it is referenced in the result expression:</p><pre><code class="language-none">  julia&gt; test(a) = @match a begin
+              n::Int           =&gt; &quot;Integer&quot;
+              _::FloatingPoint =&gt; &quot;$_ is a Float&quot;
+              (_,_)            =&gt; &quot;$_ is the second part of a tuple&quot;
+          end
+
+  julia&gt; test(1.0)
+  &quot;1.0 is a Float&quot;
+
+  julia&gt; test((1,2))
+  &quot;2 is the second part of a tuple&quot;</code></pre></li><li><p>Note that variables not referenced in the result expression will not be bound (e.g., <code>n</code> is never bound above). One small exception to this rule is that when &quot;=&amp;gt;&quot; is not used, &quot;_&quot; will not be assigned.</p></li><li><p>If you want to see the code generated for a macro, you can use `macroexpand`:</p><pre><code class="language-none">  julia&gt; macroexpand(:(@match(a, begin
+                          n::Int           =&gt; &quot;Integer&quot;
+                              m::FloatingPoint =&gt; &quot;Float&quot;
+                          end))
+  quote  # REPL[1], line 2:
+      if isa(a,Int) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
+          &quot;Integer&quot;
+      else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
+          begin  # REPL[1], line 3:
+              if isa(a,FloatingPoint) # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 387:
+                  &quot;Float&quot;
+              else  # /Users/kevin/.julia/v0.5/Match/src/matchmacro.jl, line 389:
+                  nothing
+              end
+          end
+      end
+  end</code></pre></li></ul><h1><a class="nav-anchor" id="Examples-1" href="#Examples-1">Examples</a></h1><p>Here are a couple of additional examples.</p><h2><a class="nav-anchor" id="Mathematica-Inspired-Sparse-Array-Constructor-1" href="#Mathematica-Inspired-Sparse-Array-Constructor-1">Mathematica-Inspired Sparse Array Constructor</a></h2><p><a href="https://github.com/kmsquire/Match.jl/issues/29">Contributed by @benkj</a></p><blockquote><p>I&#39;ve realized that <code>Match.jl</code> is perfect for creating in Julia an equivalent of <a href="https://reference.wolfram.com/language/ref/SparseArray.html">SparseArray</a> which I find quite useful in Mathematica.</p><p>My basic implementation is this:</p><pre><code class="language-none">macro sparsearray(size, rule)
+    return quote
+        _A = spzeros($size...)
+        $(push!(rule.args, :(_ =&gt; 0)))
+
+        for _itr in eachindex(_A)
+            _A[_itr] = @match(_itr.I, $rule)
+        end
+        _A
+    end
+end</code></pre><p>Example:</p><pre><code class="language-none">julia&gt; A = @sparsearray (5,5)  begin
+               (n,m), if n==m+1 end =&gt; m
+               (n,m), if n==m-1 end =&gt; n+10
+               (1,5) =&gt; 1
+       end</code></pre><p>which creates the matrix:</p><pre><code class="language-none">julia&gt; full(A)
+5x5 Array{Float64,2}:
+ 0.0  11.0   0.0   0.0   1.0
+ 1.0   0.0  12.0   0.0   0.0
+ 0.0   2.0   0.0  13.0   0.0
+ 0.0   0.0   3.0   0.0  14.0
+ 0.0   0.0   0.0   4.0   0.0</code></pre></blockquote><h2><a class="nav-anchor" id="Matching-Exprs-1" href="#Matching-Exprs-1">Matching Exprs</a></h2><p>The <code>@match</code> macro can be used to match Julia expressions (<code>Expr</code> objects). One issue is that the <a href="http://docs.julialang.org/en/release-0.4/manual/metaprogramming/#program-representation">internal structure of Expr objects</a> doesn&#39;t match their constructor exactly, so one has to put arguments in brackets, as well as capture the <code>typ</code> field of macros.</p><p>The following function is a nice example of matching expressions. It is used in <code>VideoIO.jl</code> to extract the names of expressions generated by <code>Clang.jl</code>, for later filtering and rewriting.:</p><pre><code class="language-julia">extract_name(x) = string(x)
+function extract_name(e::Expr)
+    @match e begin
+        Expr(:type,      [_, name, _], _)     =&gt; name
+        Expr(:typealias, [name, _], _)        =&gt; name
+        Expr(:call,      [name, _...], _)     =&gt; name
+        Expr(:function,  [sig, _...], _)      =&gt; extract_name(sig)
+        Expr(:const,     [assn, _...], _)     =&gt; extract_name(assn)
+        Expr(:(=),       [fn, body, _...], _) =&gt; extract_name(fn)
+        Expr(expr_type,  _...)                =&gt; error(&quot;Can&#39;t extract name from &quot;,
+                                                        expr_type, &quot; expression:\n&quot;,
+                                                        &quot;    $e\n&quot;)
+    end
+end</code></pre><h1><a class="nav-anchor" id="Inspiration-1" href="#Inspiration-1">Inspiration</a></h1><p>The following pages on pattern matching in scala provided inspiration for the library:</p><ul><li><p><a href="http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/">http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/</a></p></li><li><p><a href="http://java.dzone.com/articles/scala-pattern-matching-case">http://java.dzone.com/articles/scala-pattern-matching-case</a></p></li><li><p><a href="http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/">http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/</a></p></li><li><p><a href="http://docs.scala-lang.org/tutorials/tour/case-classes.html">http://docs.scala-lang.org/tutorials/tour/case-classes.html</a></p></li></ul><footer><hr/></footer></article></body></html>
