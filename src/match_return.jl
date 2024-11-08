@@ -80,26 +80,24 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
 
     # Check for the presence of early exit macros @match_return and @match_fail
     function adjust_top(p)
-        is_expr(p, :macrocall) || return p
-        if length(p.args) == 3 &&
-            (p.args[1] == :var"@match_return"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_return")))
+        if is_macro(p, :var"@match_return", 3)
             # :(@match_return e) -> :($value = $e; @goto $label)
             found_early_exit = true
             # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
             return p
-        elseif length(p.args) == 2 &&
-            (p.args[1] == :var"@match_fail"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_fail")))
+        elseif is_macro(p, :var"@match_fail", 2)
             # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
             found_early_exit = true
             # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
             return p
-        elseif length(p.args) == 4 &&
-            (p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")))
+        elseif is_macro(p, :var"@match", 4)
             # Nested uses of @match should be treated as independent
             return macroexpand(__module__, p)
-        else
+        elseif is_expr(p, :macrocall)
             # It is possible for a macro to expand into @match_fail, so only expand one step.
             return adjust_top(macroexpand(__module__, p; recursive = false))
+        else
+            return p
         end
     end
 
@@ -118,6 +116,12 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
     else
         (pattern, rewritten_result)
     end
+end
+
+function is_macro(x, name::Symbol, arity::Int)
+    return is_expr(x, :macrocall) && ## length(x.args) == arity &&
+        (x.args[1] == name ||
+         x.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(name)))
 end
 
 const marker_for_where_expression_requiring_adjustment_for_return_macro =
@@ -143,15 +147,10 @@ function code_for_expression(x::Expr)
     label = gensym("early_label")
 
     function adjust_top(result)
-        is_expr(result, :macrocall) || return result
-        if length(result.args) == 3 &&
-            (result.args[1] == :var"@match_return" ||
-             result.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_return")))
+        if is_macro(result, :var"@match_return", 3)
             # :(@match_return e) -> :($value = $e; @goto $label)
             return Expr(:block, result.args[2], :($value_symbol = $(result.args[3])), :(@goto $label))
-        elseif length(result.args) == 2 &&
-            (result.args[1] == :var"@match_fail" ||
-             result.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_fail")))
+        elseif is_macro(result, :var"@match_fail", 2)
             # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
             return Expr(:block, result.args[2], :($value_symbol = $MatchFailure), :(@goto $label))
         else
