@@ -126,4 +126,20 @@ end
     end) == 2
 end
 
+foo(x) = x == 9
+@testset "Test for presence of bug https://github.com/JuliaServices/Match.jl/issues/102" begin
+    @test (@match Foo(1, 2) begin
+        Foo(_, _) where (foo(1) && foo(2)) => 15
+        Foo(_, _) where foo(7) =>
+            begin
+                if foo(9)
+                    @match_return 16
+                end
+                17
+            end
+        Foo(_, _) where (foo(1) && foo(3)) => 18
+        _ => 43
+    end) == 43
+end
+
 end

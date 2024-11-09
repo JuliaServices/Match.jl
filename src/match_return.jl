@@ -76,29 +76,28 @@ end
 # in which `MatchFailure` is a possible result.
 #
 function adjust_case_for_return_macro(__module__, location, pattern, result, predeclared_temps)
-    value = gensym("value")
-    label = gensym("label")
     found_early_exit::Bool = false
+
+    # Check for the presence of early exit macros @match_return and @match_fail
     function adjust_top(p)
-        is_expr(p, :macrocall) || return p
-        if length(p.args) == 3 &&
-            (p.args[1] == :var"@match_return"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_return")))
+        if is_macro(p, :var"@match_return", 3)
             # :(@match_return e) -> :($value = $e; @goto $label)
             found_early_exit = true
-            return Expr(:block, p.args[2], :($value = $(p.args[3])), :(@goto $label))
-        elseif length(p.args) == 2 &&
-            (p.args[1] == :var"@match_fail"  || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match_fail")))
+            # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
+            return p
+        elseif is_macro(p, :var"@match_fail", 2)
             # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
             found_early_exit = true
-            return Expr(:block, p.args[2], :($value = $MatchFailure), :(@goto $label))
-        elseif length(p.args) == 4 &&
-            (p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")) ||
-             p.args[1] == :var"@match" || p.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(:var"@match")))
+            # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
+            return p
+        elseif is_macro(p, :var"@match", 4)
             # Nested uses of @match should be treated as independent
             return macroexpand(__module__, p)
-        else
+        elseif is_expr(p, :macrocall)
             # It is possible for a macro to expand into @match_fail, so only expand one step.
             return adjust_top(macroexpand(__module__, p; recursive = false))
+        else
+            return p
         end
     end
 
@@ -106,12 +105,60 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
     if found_early_exit
         # Since we found an early exit, we need to predeclare the temp to ensure
         # it is in scope both for where it is written and in the constructed where clause.
-        push!(predeclared_temps, value)
-        where_expr = Expr(:block, location, :($value = $rewritten_result), :(@label $label), :($value !== $MatchFailure))
+        value_symbol = gensym("value")
+        push!(predeclared_temps, value_symbol)
+        
+        # Defer generation of the label and branch, so we get a unique label in case it needs to be generated more than once.
+        where_expr = where_expression_requiring_adjustment_for_return_macro(value_symbol, location, rewritten_result)
         new_pattern = :($pattern where $where_expr)
-        new_result = value
+        new_result = value_symbol
         (new_pattern, new_result)
     else
         (pattern, rewritten_result)
     end
+end
+
+function is_macro(x, name::Symbol, arity::Int)
+    return is_expr(x, :macrocall) && ## length(x.args) == arity &&
+        (x.args[1] == name ||
+         x.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(name)))
+end
+
+const marker_for_where_expression_requiring_adjustment_for_return_macro =
+    :where_expression_requiring_adjustment_for_return_macro
+
+# We defer generating the code for the where clause with the label, because
+# the state machine may require it to be generated more than once, and each
+# generated version must use a fresh new label to avoid a duplicate label
+# in the generated code.
+function where_expression_requiring_adjustment_for_return_macro(
+    value_symbol::Symbol,
+    location,
+    expression_containing_macro)
+    Expr(marker_for_where_expression_requiring_adjustment_for_return_macro,
+         value_symbol, location, expression_containing_macro)
+end
+
+# See doc for where_expression_requiring_adjustment_for_return_macro, above
+code_for_expression(x) = x
+function code_for_expression(x::Expr)
+    x.head == marker_for_where_expression_requiring_adjustment_for_return_macro || return x
+    value_symbol, location, expression_containing_macro = x.args
+    label = gensym("early_label")
+
+    function adjust_top(result)
+        if is_macro(result, :var"@match_return", 3)
+            # :(@match_return e) -> :($value = $e; @goto $label)
+            return Expr(:block, result.args[2], :($value_symbol = $(result.args[3])), :(@goto $label))
+        elseif is_macro(result, :var"@match_fail", 2)
+            # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
+            return Expr(:block, result.args[2], :($value_symbol = $MatchFailure), :(@goto $label))
+        else
+            return result 
+        end
+    end
+
+    rewritten_result = MacroTools.prewalk(adjust_top, expression_containing_macro)
+    Expr(:block, location, :($value_symbol = $rewritten_result),
+         :(@label $label), :($value_symbol !== $MatchFailure))
 end

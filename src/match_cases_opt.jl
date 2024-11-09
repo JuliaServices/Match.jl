@@ -301,10 +301,12 @@ function remove(action::BoundIsMatchTestPattern, action_result::Bool, pattern::B
     # As a special case, if the input variable is of type Bool, then we know that true and false
     # are the only values it can hold.
     type = get!(() -> Any, binder.types, action.input)
-    if type == Bool && action.bound_expression.source isa Bool && pattern.bound_expression.source isa Bool
-        @assert action.bound_expression.source != pattern.bound_expression.source # because we already checked for equality
+    action_src = source(action.bound_expression)
+    pattern_src = source(pattern.bound_expression)
+    if type == Bool && action_src isa Bool && pattern_src isa Bool
+        @assert action_src != pattern_src # because we already checked for equality
         # If the one succeeded, then the other one fails
-        return BoundBoolPattern(loc(pattern), source(pattern), !action_result)
+        return BoundBoolPattern(loc(pattern), pattern_src, !action_result)
     end
 
     return pattern
