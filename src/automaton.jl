@@ -92,40 +92,45 @@ function Base.:(==)(a::DeduplicatedAutomatonNode, b::DeduplicatedAutomatonNode)
         isequal(a.next, b.next)
 end
 
+struct DeduplicationMap
+    # A map to "intern" a dedulplicated node, returning a unique semantically-equivalent instance
+    intern::Dict{DeduplicatedAutomatonNode, DeduplicatedAutomatonNode}
+
+    # A map to turn an AutomatonNode into the equivalent DeduplicatedAutomatonNode.
+    # This lets us retrieve from the cache the (interned) mapping of successors.
+    map::Dict{AutomatonNode, DeduplicatedAutomatonNode}
+    function DeduplicationMap()
+        new(
+            Dict{DeduplicatedAutomatonNode, DeduplicatedAutomatonNode}(),
+            Dict{AutomatonNode, DeduplicatedAutomatonNode}())
+    end
+end
+
 #
 # Deduplicate a code point, given the deduplications of the downstream code points.
-# Has the side-effect of adding a mapping to the dict.
+# Has the side-effect of adding mappings to the DeduplicationMap.
 #
 function dedup!(
-    dict::Dict{DeduplicatedAutomatonNode, DeduplicatedAutomatonNode},
-    node::AutomatonNode,
-    binder::BinderContext)
-    next = if node.next isa Tuple{}
-        node.next
-    elseif node.next isa Tuple{AutomatonNode}
-        (dedup!(dict, node.next[1], binder),)
-    elseif node.next isa Tuple{AutomatonNode, AutomatonNode}
-        t = dedup!(dict, node.next[1], binder)
-        f = dedup!(dict, node.next[2], binder)
-        (t, f)
-    else
-        error("Unknown next type: $(node.next)")
+    dedup::DeduplicationMap,
+    node::AutomatonNode)::DeduplicatedAutomatonNode
+    get!(dedup.map, node) do
+        next = tuple(map(succ -> dedup.map[succ], collect(node.next))...)
+
+        key = DeduplicatedAutomatonNode(node.action, next)
+        result = get!(dedup.intern, key, key)
+        get!(dedup.map, node, result)
     end
-    key = DeduplicatedAutomatonNode(node.action, next)
-    result = get!(dict, key, key)
-    result
 end
 
 #
 # Deduplicate the decision automaton by collapsing behaviorally identical nodes.
 #
-function deduplicate_automaton(entry::AutomatonNode, binder::BinderContext)
-    dedup_map = Dict{DeduplicatedAutomatonNode, DeduplicatedAutomatonNode}()
-    result = Vector{DeduplicatedAutomatonNode}()
+function deduplicate_automaton(entry::AutomatonNode)
+    dedup_map = DeduplicationMap()
     top_down_nodes = reachable_nodes(entry)
     for e in Iterators.reverse(top_down_nodes)
-        _ = dedup!(dedup_map, e, binder)
+        _ = dedup!(dedup_map, e)
     end
-    new_entry = dedup!(dedup_map, entry, binder)
+    new_entry = dedup!(dedup_map, entry)
     return reachable_nodes(new_entry)
 end
