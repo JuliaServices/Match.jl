@@ -156,7 +156,7 @@ end
 #
 function build_deduplicated_automaton(location::LineNumberNode, mod::Module, value, body)
     entry, predeclared_temps, binder = build_automaton(location::LineNumberNode, mod::Module, value, body)
-    top_down_nodes = deduplicate_automaton(entry, binder)
+    top_down_nodes = deduplicate_automaton(entry)
     return top_down_nodes, predeclared_temps, binder
 end
 
@@ -468,7 +468,7 @@ function handle_match_dump_verbose(__source__, __module__, io, value, body)
         # print the dump of the decision automaton before deduplication
         $dumpall($io, $top_down_nodes, $binder, true)
         # but return the count of deduplicated nodes.
-        $length($deduplicate_automaton($entry, $binder))
+        $length($deduplicate_automaton($entry))
     end)
 end
 

@@ -341,7 +341,7 @@ end
     function f2(a, b, c, d, e, f, g, h)
         # For reference we use the brute-force implementation of pattern-matching that just
         # performs the tests sequentially, like writing an if-elseif-else chain.
-        Match.@match (a, b, c, d, e, f, g, h) begin
+        Match.@__match__ (a, b, c, d, e, f, g, h) begin
             (a, b, c, d, e, f, g, h) where (!(!((!a || !b) && (c || !d)) || !(!e || f) && (g || h))) => 1
             (a, b, c, d, e, f, g, h) where (!((!a || b) && (c || d) || (e || !f) && (!g || !h))) => 2
             (a, b, c, d, e, f, g, h) where (!((a || b) && !(!c || !d) || !(!(!e || f) && !(g || !h)))) => 3

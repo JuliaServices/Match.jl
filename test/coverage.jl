@@ -550,4 +550,11 @@ end # of automaton
         end) == 2
         @test @__match__(1, 1 => 2) == 2
     end
+
+    @testset "Test trivial conditions" begin
+        @test (@__match__ 1 begin
+            _ => 2
+        end) == 2
+        @test @__match__(1, _ => 2) == 2
+    end
 end # @testset "Tests that add code coverage"
