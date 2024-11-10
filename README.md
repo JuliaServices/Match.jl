@@ -56,6 +56,7 @@ for examples of this and other features.
 * `x && y` matches values which match both patterns `x` and `y`
 * `x, if condition end` matches only if `condition` is true (`condition` may use any variables that occur earlier in the pattern eg `(x, y, z where x + y > z)`)
 * `x where condition` An alternative form for `x, if condition end`
+* `if condition end` A boolean computed pattern. `x && if condition end` is another way of writing `x where condition`.
 * Anything else is treated as a constant and tested for equality
 * Expressions can be interpolated in as constants via standard interpolation syntax `\$(x)`.  Interpolations may use previously bound variables.
 

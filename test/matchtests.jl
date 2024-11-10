@@ -1,4 +1,4 @@
-@testset "tests from Match.jl" begin
+@testset "tests for Match.jl" begin
 
 @testset "Type matching" begin
     # Type matching
@@ -408,6 +408,41 @@ end
         1|y => true
     end
 
+end
+
+@testset "Test support for ML-style guards, which are patterns of the form `if expr end`" begin
+    t = true
+    f = false
+    @test @match 1 begin
+        if f end => false
+        if t end => true
+    end
+    # The original feature request was for ML-style guards of the form
+    #     pattern && if condition end => result
+    # as an alternative to guards of the forms
+    #     pattern, if condition end => result
+    #     pattern where condition => result
+    @test @match 1 begin
+        1 && if !t end => false
+        1 && if !f end => true
+    end
+end
+
+@testset "Test an error when ML-style guards are not used correctly" begin
+    let line = 0, file = Symbol(@__FILE__)
+        try
+            line = (@__LINE__) + 2
+            @eval @match Foo(1, 2) begin
+                if t; nothing; end => true
+            end
+            @test false
+        catch ex
+            @test ex isa LoadError
+            e = ex.error
+            @test e isa ErrorException
+            @test startswith(e.msg, "$file:$line: Unrecognized @match guard syntax:")
+        end
+    end
 end
 
 end

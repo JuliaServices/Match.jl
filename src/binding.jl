@@ -410,6 +410,14 @@ function bind_pattern!(
         pattern0, assigned = bind_pattern!(location, subpattern, input, binder, assigned)
         pattern1 = shred_where_clause(guard, false, location, binder, assigned)
         pattern = BoundAndPattern(location, source, BoundPattern[pattern0, pattern1])
+    
+    elseif is_expr(source, :if, 2)
+        # if expr end
+        if !is_empty_block(source.args[2])
+            error("$(location.file):$(location.line): Unrecognized @match guard syntax: `$source`.")
+        end
+        guard = source.args[1]
+        pattern = shred_where_clause(guard, false, location, binder, assigned)
 
     elseif is_expr(source, :call) && source.args[1] == :(:) && length(source.args) in 3:4
         # A range pattern.  We depend on the Range API to make sense of it.
