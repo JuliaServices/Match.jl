@@ -276,6 +276,31 @@ end
     @test without_eq == 8
 end
 
+@testset "test for decision automaton optimizations 6" begin
+    count_leq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x <= y => 1
+        Foo(x, y) where x > y => 2
+    end)
+    count_geq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x >= y => 1
+        Foo(x, y) where x < y => 2
+    end)
+    count_neq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x != y => 1
+        Foo(x, y) where x == y => 2
+    end)
+    # All three should generate the similar automatons, avoiding duplicate comparisons
+    @test count_leq == 8
+    @test count_geq == 8
+    @test count_neq == 8
+    # If the optimization does not apply, the automaton should be larger
+    count_other = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x == y => 1
+        Foo(x, y) where x >= y => 2
+    end)
+    @test count_other == 10
+end
+
 @testset "test for sharing where clause conjuncts" begin
     # Node 1 TEST «input_value» isa Main.Rematch2Tests.Foo ELSE: Node 18 («label_2»)
     # Node 2 FETCH «input_value.x» := «input_value».x
