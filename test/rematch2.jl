@@ -257,6 +257,25 @@ end
     end) == 7
 end
 
+@testset "test for decision automaton optimizations 5" begin
+    with_neq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x == y => 1
+        Foo(x, y) where x != y => 2
+    end)
+    without_neq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x == y => 1
+        Foo(x, y) => 2
+    end)
+    without_eq = (Match.@match_count_nodes some_value begin
+        Foo(x, y) where x != y => 2
+        Foo(x, y) => 1
+    end)
+    # All three should generate the equivalent automatons
+    @test with_neq == 8
+    @test without_eq == 8
+    @test without_eq == 8
+end
+
 @testset "test for sharing where clause conjuncts" begin
     # Node 1 TEST «input_value» isa Main.Rematch2Tests.Foo ELSE: Node 18 («label_2»)
     # Node 2 FETCH «input_value.x» := «input_value».x
