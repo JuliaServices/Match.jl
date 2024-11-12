@@ -46,6 +46,7 @@ for examples of this and other features.
 * `x` (an identifier) matches anything, binds value to the variable `x`
 * `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
 * `T(y=1)` matches structs of type `T` whose `y` field equals `1`
+* `X(x,y,z)` where `X` is not a type, calls `Match.extract(Val(:X), v)` on the value `v` and matches the result against the tuple pattern `(x,y,z)`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
 * `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
@@ -88,6 +89,28 @@ In this example, the result value when matching `pattern1` is a block that has t
 When `pattern1` matches but `some_failure_condition` is `true`, then the whole case is treated as not matching and the following cases are tried.
 Otherwise, if `some_shortcut_condition` is `true`, then `1` is the result value for this case.
 Otherwise `2` is the result.
+
+## Extractors
+
+New patterns can be defined on values by overloading the `extract` function with the new pattern name.
+For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
+
+```julia
+function Match.extract(::Val{:Polar}, p::Tuple{<:Number,<:Number})
+    x, y = p
+    return (sqrt(x^2 + y^2), atan(y, x))
+end
+```
+This definition allows you to use a new `Polar` extractor pattern:
+```
+@match Polar(r,θ) = (1,1)
+@assert r == sqrt(2) && θ == π / 4
+```
+
+The `extract` function should return either a tuple of values to be matched by subpatterns or `nothing`.
+
+Extractors can be used to implement more user-friendly matching for types defined with `SumTypes.jl` or
+other packages.
 
 ## Differences from previous versions of `Match.jl`
 

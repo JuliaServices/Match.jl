@@ -66,6 +66,21 @@ function bind_type(location, T, input, binder)
 
     bound_type
 end
+function try_bind_type(location, T, input, binder)
+    # bind type at macro expansion time.  It will be verified at runtime.
+    bound_type = nothing
+    try
+        bound_type = Core.eval(binder.mod, Expr(:block, location, T))
+    catch ex
+        return nothing
+    end
+
+    if !(bound_type isa Type)
+        return nothing
+    end
+
+    return bound_type
+end
 
 function simple_name(s::Symbol)
     simple_name(string(s))
@@ -227,7 +242,7 @@ function bind_pattern!(
         # struct pattern.
         # TypeName(patterns...)
         T = source.args[1]
-        subpatterns = source.args[2:length(source.args)]
+        subpatterns = source.args[2:end]
         len = length(subpatterns)
         named_fields = [pat.args[1] for pat in subpatterns if is_expr(pat, :kw)]
         named_count = length(named_fields)
@@ -241,50 +256,70 @@ function bind_pattern!(
 
         match_positionally = named_count == 0
 
-        # bind type at macro expansion time
-        pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
-        bound_type = (pattern0::BoundTypeTestPattern).type
-        patterns = BoundPattern[pattern0]
-        field_names::Tuple = match_fieldnames(bound_type)
-        if match_positionally && len != length(field_names)
-            error("$(location.file):$(location.line): The type `$bound_type` has " *
-                  "$(length(field_names)) fields but the pattern expects $len fields.")
-        end
-
-        for i in 1:len
-            pat = subpatterns[i]
-            if match_positionally
-                field_name = field_names[i]
-                pattern_source = pat
-            else
-                @assert pat.head == :kw
-                field_name = pat.args[1]
-                pattern_source = pat.args[2]
-                if !(field_name in field_names)
-                    error("$(location.file):$(location.line): Type `$bound_type` has " *
-                          "no field `$field_name`.")
-                end
+        is_type = !Base.isnothing(try_bind_type(location, T, input, binder))
+        if T isa Symbol && match_positionally && !is_type
+            # TODO support named tuples
+            patterns = BoundPattern[]
+            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
+            extract = BoundExpression(location, Expr(:call, Match.extract, Val(T), input))
+            # check that the extractor exists
+            methods = Base.methods(Match.extract, (Val{T}, Any,))
+            if length(methods) <= 1
+                # If there's only one matching Match.extract method, it's the default one.
+                # that returns nothing. Worse if there are fewer than one.
+                error("$(location.file):$(location.line): `$T` is neither a type name " *
+                      "nor is there a `Match.extract(::Val{$T}, _)` implementation.")
+            end
+            fetch = BoundFetchExpressionPattern(extract, nothing, Any)
+            temp1 = push_pattern!(patterns, binder, fetch)
+            subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), temp1, binder, assigned)
+            patterns = BoundPattern[fetch, subpattern]
+        else
+            # bind type at macro expansion time
+            pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
+            bound_type = (pattern0::BoundTypeTestPattern).type
+            patterns = BoundPattern[pattern0]
+            field_names::Tuple = match_fieldnames(bound_type)
+            if match_positionally && len != length(field_names)
+                error("$(location.file):$(location.line): The type `$bound_type` has " *
+                      "$(length(field_names)) fields but the pattern expects $len fields.")
             end
 
-            field_type = nothing
-            if field_name == match_fieldnames(Symbol)[1]
-                # special case Symbol's hypothetical name field.
-                field_type = String
-            else
-                for (fname, ftype) in zip(Base.fieldnames(bound_type), Base.fieldtypes(bound_type))
-                    if fname == field_name
-                        field_type = ftype
-                        break
+            for i in 1:len
+                pat = subpatterns[i]
+                if match_positionally
+                    field_name = field_names[i]
+                    pattern_source = pat
+                else
+                    @assert pat.head == :kw
+                    field_name = pat.args[1]
+                    pattern_source = pat.args[2]
+                    if !(field_name in field_names)
+                        error("$(location.file):$(location.line): Type `$bound_type` has " *
+                              "no field `$field_name`.")
                     end
                 end
-            end
-            @assert field_type !== nothing
 
-            fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
-            field_temp = push_pattern!(patterns, binder, fetch)
-            bound_subpattern, assigned = bind_pattern!(
-                location, pattern_source, field_temp, binder, assigned)
-            push!(patterns, bound_subpattern)
+                field_type = nothing
+                if field_name == match_fieldnames(Symbol)[1]
+                    # special case Symbol's hypothetical name field.
+                    field_type = String
+                else
+                    for (fname, ftype) in zip(Base.fieldnames(bound_type), Base.fieldtypes(bound_type))
+                        if fname == field_name
+                            field_type = ftype
+                            break
+                        end
+                    end
+                end
+                @assert field_type !== nothing
+
+                fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
+                field_temp = push_pattern!(patterns, binder, fetch)
+                bound_subpattern, assigned = bind_pattern!(
+                    location, pattern_source, field_temp, binder, assigned)
+                push!(patterns, bound_subpattern)
+            end
         end
 
         pattern = BoundAndPattern(location, source, patterns)
@@ -410,7 +445,7 @@ function bind_pattern!(
         pattern0, assigned = bind_pattern!(location, subpattern, input, binder, assigned)
         pattern1 = shred_where_clause(guard, false, location, binder, assigned)
         pattern = BoundAndPattern(location, source, BoundPattern[pattern0, pattern1])
-    
+
     elseif is_expr(source, :if, 2)
         # if expr end
         if !is_empty_block(source.args[2])

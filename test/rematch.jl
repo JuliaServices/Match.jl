@@ -474,6 +474,45 @@ end
     end)
 end
 
+@testset "extractor function" begin
+    @eval function Match.extract(::Val{:polar}, p::Foo)
+        return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
+    end
+    @test (@eval @match Foo(1,1) begin
+        polar(r,θ) => r == sqrt(2) && θ == π / 4
+        _ => false
+    end)
+end
+
+@testset "extractor function that might fail" begin
+    @eval function Match.extract(::Val{:diff}, p::Foo)
+        return p.x >= p.y ? (p.x - p.y,) : nothing
+    end
+    @test (@eval @match Foo(1,1) begin
+        diff(2) => false
+        diff(1) => false
+        diff(0) => true
+        _ => false
+    end)
+    @test (@eval @match Foo(2,1) begin
+        diff(2) => false
+        diff(1) => true
+        _ => false
+    end)
+    @test (@eval @match Foo(1,2) begin
+        diff(2) => false
+        diff(1) => false
+        _ => true
+    end)
+end
+
+@testset "extractor function missing" begin
+    @test_throws LoadError (@eval @match Foo(1,1) begin
+        Bar(0) => true
+        _ => false
+    end)
+end
+
 @testset "Miscellanea" begin
     # match against fiddly symbols (https://github.com/JuliaServices/Match.jl/issues/32)
     @test (@match :(@when a < b) begin
