@@ -67,7 +67,7 @@ function bind_type(location, T, input, binder)
     bound_type
 end
 function try_bind_type(location, T, input, binder)
-    # bind type at macro expansion time.  It will be verified at runtime.
+     # bind type at macro expansion time in the caller's module.
     bound_type = nothing
     try
         bound_type = Core.eval(binder.mod, Expr(:block, location, T))
