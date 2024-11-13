@@ -89,6 +89,9 @@ end
 function code(bound_pattern::BoundFetchExpressionPattern)
     code(bound_pattern.bound_expression)
 end
+function code(bound_pattern::BoundFetchExtractorPattern)
+    Expr(:call, Match.extract, Val(bound_pattern.extractor), bound_pattern.input)
+end
 
 # Return an expression that computes whether or not the pattern matches.
 function lower_pattern_to_boolean(bound_pattern::BoundPattern, binder::BinderContext)

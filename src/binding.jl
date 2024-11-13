@@ -110,6 +110,9 @@ end
 function gentemp(p::BoundFetchLengthPattern)::Symbol
     gensym(string("length(", simple_name(p.input), ")"))
 end
+function gentemp(p::BoundFetchExtractorPattern)::Symbol
+    gensym(string("extract(", p.extractor, ", ", simple_name(p.input), ")"))
+end
 
 #
 # The following are special bindings used to handle the point where
@@ -260,17 +263,16 @@ function bind_pattern!(
         if T isa Symbol && match_positionally && !is_type
             # TODO support named tuples
             patterns = BoundPattern[]
-            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
-            extract = BoundExpression(location, Expr(:call, Match.extract, Val(T), input))
             # check that the extractor exists
             methods = Base.methods(Match.extract, (Val{T}, Any,))
             if length(methods) <= 1
                 # If there's only one matching Match.extract method, it's the default one.
                 # that returns nothing. Worse if there are fewer than one.
                 error("$(location.file):$(location.line): `$T` is neither a type name " *
-                      "nor is there a `Match.extract(::Val{$T}, _)` implementation.")
+                "nor is there a `Match.extract(::Val{$T}, _)` implementation.")
             end
-            fetch = BoundFetchExpressionPattern(extract, nothing, Any)
+            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
+            fetch = BoundFetchExtractorPattern(location, source, input, T, Any)
             temp = push_pattern!(patterns, binder, fetch)
             subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), temp, binder, assigned)
             push!(patterns, subpattern)

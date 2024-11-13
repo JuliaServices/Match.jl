@@ -185,6 +185,13 @@ function pretty(io::IO, p::BoundFetchLengthPattern)
     pretty(io, p.input)
     print(io, ")")
 end
+function pretty(io::IO, p::BoundFetchExtractorPattern)
+    print(io, "extract(")
+    pretty(io, p.extractor)
+    print(io, ", ")
+    pretty(io, p.input)
+    print(io, ")")
+end
 function pretty(io::IO, p::BoundFetchExpressionPattern)
     pretty(io, p.bound_expression)
 end

@@ -510,13 +510,14 @@ end
     @eval function Match.extract(::Val{:foo}, p::Foo)
         return (p.x, p.y)
     end
-    @test_throws LoadError (@eval @match Foo(Foo(1,2),3) begin
+    @test (@eval @match Foo(Foo(1,2),3) begin
         foo(foo(1,2),3) => true
         _ => false
     end)
 end
 
 @testset "extractor function missing" begin
+    # Bar is neither a type nor an extractor function
     @test_throws LoadError (@eval @match Foo(1,1) begin
         Bar(0) => true
         _ => false
