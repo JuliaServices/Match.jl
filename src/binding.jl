@@ -271,9 +271,9 @@ function bind_pattern!(
                       "nor is there a `Match.extract(::Val{$T}, _)` implementation.")
             end
             fetch = BoundFetchExpressionPattern(extract, nothing, Any)
-            temp1 = push_pattern!(patterns, binder, fetch)
-            subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), temp1, binder, assigned)
-            patterns = BoundPattern[fetch, subpattern]
+            temp = push_pattern!(patterns, binder, fetch)
+            subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), temp, binder, assigned)
+            push!(patterns, subpattern)
         else
             # bind type at macro expansion time
             pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
