@@ -506,6 +506,16 @@ end
     end)
 end
 
+@testset "nested extractor function" begin
+    @eval function Match.extract(::Val{:foo}, p::Foo)
+        return (p.x, p.y)
+    end
+    @test_throws LoadError (@eval @match Foo(Foo(1,2),3) begin
+        foo(foo(1,2),3) => true
+        _ => false
+    end)
+end
+
 @testset "extractor function missing" begin
     @test_throws LoadError (@eval @match Foo(1,1) begin
         Bar(0) => true
