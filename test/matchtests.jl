@@ -445,4 +445,32 @@ end
     end
 end
 
+@testset "Test the behavior of NaN values" begin
+    v = 0.0 / 0.0
+    @test @match v begin
+        x where x > 0 => false
+        x where x <= 0 => false
+        _ => true
+    end
+    @test @match v begin
+        x where x < 0 => false
+        x where x >= 0 => false
+        _ => true
+    end
+    @test @match v begin
+        x where x >= 0 => false
+        x where x < 0 => false
+        _ => true
+    end
+    @test @match v begin
+        x where x <= 0 => false
+        x where x > 0 => false
+        _ => true
+    end
+    @test @match v begin
+        x where x == 0 => false
+        x where x != 0 => true
+    end
+end
+
 end
