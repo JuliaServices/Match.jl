@@ -485,6 +485,14 @@ end
     end)
 end
 
+@testset "extractor function missing" begin
+    # Bar is neither a type nor an extractor function
+    @test_throws LoadError (@eval @match Foo(1,1) begin
+        Bar(0) => true
+        _ => false
+    end)
+end
+
 @testset "extractor function that might fail" begin
     @eval struct Diff end
     @eval function Match.extract(::Type{Diff}, p::Foo)
@@ -508,20 +516,6 @@ end
     end)
 end
 
-@testset "extract from existing type" begin
-    @eval struct P
-        x
-        y
-    end
-    @eval function Match.extract(::Type{P}, p::P)
-        return (p.y, p.x)
-    end
-    @test (@eval @match P(P(1,2),3) begin
-        P(3,P(2,1)) => true
-        _ => false
-    end)
-end
-
 @testset "nested extractor function" begin
     @eval struct Q end
     @eval function Match.extract(::Type{Q}, p::Foo)
@@ -533,10 +527,32 @@ end
     end)
 end
 
-@testset "extractor function missing" begin
-    # Bar is neither a type nor an extractor function
-    @test_throws LoadError (@eval @match Foo(1,1) begin
-        Bar(0) => true
+@testset "extract from existing type" begin
+    @eval struct P
+        x
+        y
+    end
+    @eval function Match.extract(::Type{P}, p::P)
+        # flip the arguments.
+        return (p.y, p.x)
+    end
+    @test (@eval @match P(P(1,2),3) begin
+        P(3,P(2,1)) => true
+        _ => false
+    end)
+end
+
+@testset "extract from existing type 2" begin
+    @eval struct P
+        x
+        y
+    end
+    @eval function Match.extract(::Type{P}, p::P)
+        return (p.x,)
+    end
+    @test (@eval @match P(P(1,2),3) begin
+        # the outer P uses the extractor, the inner P uses the type
+        P(P(1,2)) => true
         _ => false
     end)
 end
