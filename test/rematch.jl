@@ -475,43 +475,60 @@ end
 end
 
 @testset "extractor function" begin
-    @eval function Match.extract(::Val{:polar}, p::Foo)
+    @eval struct Polar end
+    @eval function Match.extract(::Type{Polar}, p::Foo)
         return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
     end
     @test (@eval @match Foo(1,1) begin
-        polar(r,θ) => r == sqrt(2) && θ == π / 4
+        Polar(r,θ) => r == sqrt(2) && θ == π / 4
         _ => false
     end)
 end
 
 @testset "extractor function that might fail" begin
-    @eval function Match.extract(::Val{:diff}, p::Foo)
+    @eval struct Diff end
+    @eval function Match.extract(::Type{Diff}, p::Foo)
         return p.x >= p.y ? (p.x - p.y,) : nothing
     end
     @test (@eval @match Foo(1,1) begin
-        diff(2) => false
-        diff(1) => false
-        diff(0) => true
+        Diff(2) => false
+        Diff(1) => false
+        Diff(0) => true
         _ => false
     end)
     @test (@eval @match Foo(2,1) begin
-        diff(2) => false
-        diff(1) => true
+        Diff(2) => false
+        Diff(1) => true
         _ => false
     end)
     @test (@eval @match Foo(1,2) begin
-        diff(2) => false
-        diff(1) => false
+        Diff(2) => false
+        Diff(1) => false
         _ => true
     end)
 end
 
+@testset "extract from existing type" begin
+    @eval struct P
+        x
+        y
+    end
+    @eval function Match.extract(::Type{P}, p::P)
+        return (p.y, p.x)
+    end
+    @test (@eval @match P(P(1,2),3) begin
+        P(3,P(2,1)) => true
+        _ => false
+    end)
+end
+
 @testset "nested extractor function" begin
-    @eval function Match.extract(::Val{:foo}, p::Foo)
+    @eval struct Q end
+    @eval function Match.extract(::Type{Q}, p::Foo)
         return (p.x, p.y)
     end
     @test (@eval @match Foo(Foo(1,2),3) begin
-        foo(foo(1,2),3) => true
+        Q(Q(1,2),3) => true
         _ => false
     end)
 end

@@ -52,9 +52,8 @@ The following syntactic forms can be used in patterns:
 
 * `_` matches anything
 * `x` (an identifier) matches anything, binds value to the variable `x`
-* `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
+* `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`.
 * `T(y=1)` matches structs of type `T` whose `y` field equals `1`
-* `X(x,y,z)` where `X` is not a type, calls `Match.extract(Val(:X), v)` on the value `v` and matches the result against the tuple pattern `(x,y,z)`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
 * `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
@@ -249,12 +248,13 @@ struct MatchFailure <: Exception
 end
 
 """
-    extract(::Val{x}, value)
+    extract(T::Type, value)
 
-Implement extractor with name `x`, returning a tuple of fields of `value`, or nothing if
-`x` cannot be extracted from `value`.
+Implement extractor for type `T`, returning a tuple of fields of `value`, or `nothing` if
+the match fails. This can be used to override matching on type `T`. If `extract(T, value)`
+returns a tuple, it will be used instead of the default field extraction.
 """
-extract(::Val, value) = nothing
+extract(::Type, ::Any) = nothing
 
 # const fields only suppored >= Julia 1.8
 macro _const(x)

@@ -46,7 +46,6 @@ for examples of this and other features.
 * `x` (an identifier) matches anything, binds value to the variable `x`
 * `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
 * `T(y=1)` matches structs of type `T` whose `y` field equals `1`
-* `X(x,y,z)` where `X` is not a type, calls `Match.extract(Val(:X), v)` on the value `v` and matches the result against the tuple pattern `(x,y,z)`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
 * `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
@@ -92,11 +91,17 @@ Otherwise `2` is the result.
 
 ## Extractors
 
-New patterns can be defined on values by overloading the `extract` function with the new pattern name.
+Struct patterns of the form `T(x,y,z)` and `::T` can be overridden by defining an _extractor_ function for `T`.
+When a value `v` of is being matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
+The value `v` need not be of type `T`.
+If `extract` returns a non-tuple (usually `nothing`), the `v` is checked against struct type `T` with fields `x,y,z`.
+If `v` is being matched against a pattern `::T`, the pattern matches if `Match.extract(T, v)` returns any tuple value or if `v` is a `T`.
+
 For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
 
 ```julia
-function Match.extract(::Val{:Polar}, p::Tuple{<:Number,<:Number})
+struct Polar end
+function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
     x, y = p
     return (sqrt(x^2 + y^2), atan(y, x))
 end

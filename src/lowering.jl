@@ -40,7 +40,7 @@ function code(bound_pattern::BoundTypeTestPattern, binder::BinderContext)
             $string($(bound_pattern.type)), " at macro expansion time but ",
              $src, " later."))))
         push!(binder.assertions, Expr(:block, bound_pattern.location, :($test || $thrown)))
-        push!(binder.asserted_types, )
+        push!(binder.asserted_types, src)
     end
     :($(bound_pattern.input) isa $(bound_pattern.type))
 end
@@ -90,7 +90,7 @@ function code(bound_pattern::BoundFetchExpressionPattern)
     code(bound_pattern.bound_expression)
 end
 function code(bound_pattern::BoundFetchExtractorPattern)
-    Expr(:call, Match.extract, Val(bound_pattern.extractor), bound_pattern.input)
+    Expr(:call, Match.extract, bound_pattern.extractor, bound_pattern.input)
 end
 
 # Return an expression that computes whether or not the pattern matches.

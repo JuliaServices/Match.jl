@@ -261,41 +261,53 @@ function bind_pattern!(
 
         # TODO: just try the extractor first with Type{T}
 
-        is_type = Base.isnothing(try_bind_type(location, T, input, binder))
+        # bind type at macro expansion time
+        disjuncts = BoundPattern[]
+        extractor_temp = nothing
 
-        is_extractor = if T isa Symbol
-            methods = Base.methods(Match.extract, (Val{T}, Any,))
-            length(methods) >= 1
-        else
-            false
-        end
+        patterns = BoundPattern[]
+        bound_type = bind_type(location, T, input, binder)
+        # pattern = BoundTypeTestPattern(location, T, input, bound_type)
+        # push!(patterns, pattern)
 
-        if is_extractor && is_type
-            error("$(location.file):$(location.line): `$T` is both a type name and an extractor name. " *
-                "To prefer the type name, use @type $(source). " *
-                "To prefer the extractor name, use @extract $(source).")
-        end
-
-        if is_extractor
+        # Try the extractor first.
+        if match_positionally
             # TODO support named tuples
-            @assert match_positionally "$(location.file):$(location.line): Extractors patterns do not support named fields."
-            patterns = BoundPattern[]
-            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
-            fetch = BoundFetchExtractorPattern(location, source, input, T, Any)
-            temp = push_pattern!(patterns, binder, fetch)
-            subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), temp, binder, assigned)
-            push!(patterns, subpattern)
-        else
-            # bind type at macro expansion time
-            pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
-            bound_type = (pattern0::BoundTypeTestPattern).type
-            patterns = BoundPattern[pattern0]
-            field_names::Tuple = match_fieldnames(bound_type)
-            if match_positionally && len != length(field_names)
-                error("$(location.file):$(location.line): The type `$bound_type` has " *
-                      "$(length(field_names)) fields but the pattern expects $len fields.")
+            input_type = get(binder.types, input, Any)
+            # Check if there is an extractor method for the pattern type and input type.
+            methods = Base.methods(Match.extract, (Type{bound_type}, input_type,))
+            # There is always at least one method (the default), so the extractor
+            # method is implemented if there's at least one other method.
+            if length(methods) > 1
+                conjuncts1 = BoundPattern[]
+                # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
+                fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
+                extractor_temp = push_pattern!(conjuncts1, binder, fetch)
+                subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), extractor_temp, binder, assigned)
+                push!(conjuncts1, subpattern)
+                push!(disjuncts, BoundAndPattern(location, source, conjuncts1))
             end
+        end
 
+        # If the extractor failed, try the field-by-field match.
+        field_names::Tuple = match_fieldnames(bound_type)
+
+        pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
+        bound_type = (pattern0::BoundTypeTestPattern).type
+        conjuncts2 = BoundPattern[pattern0]
+
+        # Check that the extractor, if defined, failed.
+        if !isnothing(extractor_temp)
+            push!(conjuncts2, BoundIsMatchTestPattern(extractor_temp, BoundExpression(location, :nothing, ImmutableDict{Symbol, Symbol}()), false))
+        end
+
+        if match_positionally && len != length(field_names)
+            # If the extractor is defined, silently fail if the field-by-field match fails.
+            if isnothing(extractor_temp)
+                error("$(location.file):$(location.line): The type `$bound_type` has " *
+                        "$(length(field_names)) fields but the pattern expects $len fields.")
+            end
+        else
             for i in 1:len
                 pat = subpatterns[i]
                 if match_positionally
@@ -307,7 +319,7 @@ function bind_pattern!(
                     pattern_source = pat.args[2]
                     if !(field_name in field_names)
                         error("$(location.file):$(location.line): Type `$bound_type` has " *
-                              "no field `$field_name`.")
+                                "no field `$field_name`.")
                     end
                 end
 
@@ -326,14 +338,30 @@ function bind_pattern!(
                 @assert field_type !== nothing
 
                 fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
-                field_temp = push_pattern!(patterns, binder, fetch)
+                field_temp = push_pattern!(conjuncts2, binder, fetch)
                 bound_subpattern, assigned = bind_pattern!(
                     location, pattern_source, field_temp, binder, assigned)
-                push!(patterns, bound_subpattern)
+                push!(conjuncts2, bound_subpattern)
             end
         end
 
-        pattern = BoundAndPattern(location, source, patterns)
+        if !isempty(conjuncts2)
+            pattern = BoundAndPattern(location, source, conjuncts2)
+            push!(disjuncts, pattern)
+        end
+
+        if isempty(disjuncts)
+            nothing
+        elseif length(disjuncts) == 1
+            push!(patterns, disjuncts[1])
+        else
+            push!(patterns, BoundOrPattern(location, source, disjuncts))
+        end
+        if isempty(patterns)
+            pattern = BoundTruePattern(location, source)
+        else
+            pattern = BoundAndPattern(location, source, patterns)
+        end
 
     elseif is_expr(source, :(&&), 2)
         # conjunction: `(a && b)` where `a` and `b` are patterns.

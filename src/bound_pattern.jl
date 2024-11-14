@@ -292,11 +292,11 @@ struct BoundFetchExtractorPattern <: BoundFetchPattern
     location::LineNumberNode
     source::Any
     input::Symbol
-    extractor::Symbol
+    extractor::Type
     type::Type
 end
 function Base.hash(a::BoundFetchExtractorPattern, h::UInt64)
-    hash((a.input, a.extractor, 0xd7882f5b4888d335), h)
+    hash((a.input, Base.nameof(a.extractor), 0xd7882f5b4888d335), h)
 end
 function Base.:(==)(a::BoundFetchExtractorPattern, b::BoundFetchExtractorPattern)
     a.input == b.input && a.extractor == b.extractor
