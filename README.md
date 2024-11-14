@@ -109,7 +109,8 @@ This definition allows you to use a new `Polar` extractor pattern:
 @match Polar(r,θ) = (1,1)
 @assert r == sqrt(2) && θ == π / 4
 ```
-The `extract` function should return either a tuple of values to be matched by subpatterns or `nothing`.
+
+The `extract` function should return either a tuple of values to be matched by the subpatterns or return `nothing`.
 
 Extractors can also be used to ignore or transform fields of existing types during matching.
 For example, this extractor ignores the `annos` field of the `AddExpr` type:
