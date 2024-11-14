@@ -259,18 +259,27 @@ function bind_pattern!(
 
         match_positionally = named_count == 0
 
-        is_type = !Base.isnothing(try_bind_type(location, T, input, binder))
-        if T isa Symbol && match_positionally && !is_type
-            # TODO support named tuples
-            patterns = BoundPattern[]
-            # check that the extractor exists
+        # TODO: just try the extractor first with Type{T}
+
+        is_type = Base.isnothing(try_bind_type(location, T, input, binder))
+
+        is_extractor = if T isa Symbol
             methods = Base.methods(Match.extract, (Val{T}, Any,))
-            if length(methods) <= 1
-                # If there's only one matching Match.extract method, it's the default one.
-                # that returns nothing. Worse if there are fewer than one.
-                error("$(location.file):$(location.line): `$T` is neither a type name " *
-                "nor is there a `Match.extract(::Val{$T}, _)` implementation.")
-            end
+            length(methods) >= 1
+        else
+            false
+        end
+
+        if is_extractor && is_type
+            error("$(location.file):$(location.line): `$T` is both a type name and an extractor name. " *
+                "To prefer the type name, use @type $(source). " *
+                "To prefer the extractor name, use @extract $(source).")
+        end
+
+        if is_extractor
+            # TODO support named tuples
+            @assert match_positionally "$(location.file):$(location.line): Extractors patterns do not support named fields."
+            patterns = BoundPattern[]
             # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
             fetch = BoundFetchExtractorPattern(location, source, input, T, Any)
             temp = push_pattern!(patterns, binder, fetch)
