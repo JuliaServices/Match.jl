@@ -562,7 +562,7 @@ end
     end
     @test (@eval @match P(P(1,2),3) begin
         # the outer P uses the extractor, the inner P uses the type
-        P(P(1,2)) => true
+        P(P(1)) => true
         _ => false
     end)
 end
