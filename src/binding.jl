@@ -259,33 +259,30 @@ function bind_pattern!(
 
         match_positionally = named_count == 0
 
-        # TODO: just try the extractor first with Type{T}
-
         # bind type at macro expansion time
+        bound_type = bind_type(location, T, input, binder)
+
+        # First try the extractor, then try the struct type.
         disjuncts = BoundPattern[]
         extractor_temp = nothing
 
-        patterns = BoundPattern[]
-        bound_type = bind_type(location, T, input, binder)
-        # pattern = BoundTypeTestPattern(location, T, input, bound_type)
-        # push!(patterns, pattern)
-
         # Try the extractor first.
+        # This only works with positional arguments.
+        # TODO support named tuples
         if match_positionally
-            # TODO support named tuples
             input_type = get(binder.types, input, Any)
             # Check if there is an extractor method for the pattern type and input type.
             methods = Base.methods(Match.extract, (Type{bound_type}, input_type,))
             # There is always at least one method (the default), so the extractor
             # method is implemented if there's at least one other method.
             if length(methods) > 1
-                conjuncts1 = BoundPattern[]
+                conjuncts = BoundPattern[]
                 # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
                 fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
-                extractor_temp = push_pattern!(conjuncts1, binder, fetch)
+                extractor_temp = push_pattern!(conjuncts, binder, fetch)
                 subpattern, assigned = bind_pattern!(location, Expr(:tuple, subpatterns...), extractor_temp, binder, assigned)
-                push!(conjuncts1, subpattern)
-                push!(disjuncts, BoundAndPattern(location, source, conjuncts1))
+                push!(conjuncts, subpattern)
+                push!(disjuncts, BoundAndPattern(location, source, conjuncts))
             end
         end
 
@@ -294,12 +291,7 @@ function bind_pattern!(
 
         pattern0, assigned = bind_pattern!(location, :(::($T)), input, binder, assigned)
         bound_type = (pattern0::BoundTypeTestPattern).type
-        conjuncts2 = BoundPattern[pattern0]
-
-        # Check that the extractor, if defined, failed.
-        if !isnothing(extractor_temp)
-            push!(conjuncts2, BoundIsMatchTestPattern(extractor_temp, BoundExpression(location, :nothing, ImmutableDict{Symbol, Symbol}()), false))
-        end
+        type_conjuncts = BoundPattern[pattern0]
 
         if match_positionally && len != length(field_names)
             # If the extractor is defined, silently fail if the field-by-field match fails.
@@ -318,8 +310,10 @@ function bind_pattern!(
                     field_name = pat.args[1]
                     pattern_source = pat.args[2]
                     if !(field_name in field_names)
-                        error("$(location.file):$(location.line): Type `$bound_type` has " *
-                                "no field `$field_name`.")
+                        if isnothing(extractor_temp)
+                            error("$(location.file):$(location.line): Type `$bound_type` has " *
+                                    "no field `$field_name`.")
+                        end
                     end
                 end
 
@@ -338,29 +332,20 @@ function bind_pattern!(
                 @assert field_type !== nothing
 
                 fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
-                field_temp = push_pattern!(conjuncts2, binder, fetch)
+                field_temp = push_pattern!(type_conjuncts, binder, fetch)
                 bound_subpattern, assigned = bind_pattern!(
                     location, pattern_source, field_temp, binder, assigned)
-                push!(conjuncts2, bound_subpattern)
+                push!(type_conjuncts, bound_subpattern)
             end
         end
 
-        if !isempty(conjuncts2)
-            pattern = BoundAndPattern(location, source, conjuncts2)
-            push!(disjuncts, pattern)
-        end
+        pattern = BoundAndPattern(location, source, type_conjuncts)
+        push!(disjuncts, pattern)
 
-        if isempty(disjuncts)
-            nothing
-        elseif length(disjuncts) == 1
-            push!(patterns, disjuncts[1])
+        if length(disjuncts) == 1
+            pattern = disjuncts[1]
         else
-            push!(patterns, BoundOrPattern(location, source, disjuncts))
-        end
-        if isempty(patterns)
-            pattern = BoundTruePattern(location, source)
-        else
-            pattern = BoundAndPattern(location, source, patterns)
+            pattern = BoundOrPattern(location, source, disjuncts)
         end
 
     elseif is_expr(source, :(&&), 2)
