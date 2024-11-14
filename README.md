@@ -91,14 +91,12 @@ Otherwise `2` is the result.
 
 ## Extractors
 
-Struct patterns of the form `T(x,y,z)` and `::T` can be overridden by defining an _extractor_ function for `T`.
+Struct patterns of the form `T(x,y,z)` can be overridden by defining an _extractor_ function for `T`.
 When a value `v` of is being matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
 The value `v` need not be of type `T`.
-If `extract` returns a non-tuple (usually `nothing`), the `v` is checked against struct type `T` with fields `x,y,z`.
-If `v` is being matched against a pattern `::T`, the pattern matches if `Match.extract(T, v)` returns any tuple value or if `v` is a `T`.
+If `extract` returns a non-tuple (usually `nothing`), the `v` is checked against struct type `T` with it fields checked against the patterns `x, y, z`.
 
 For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
-
 ```julia
 struct Polar end
 function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
@@ -107,12 +105,30 @@ function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
 end
 ```
 This definition allows you to use a new `Polar` extractor pattern:
-```
+```julia
 @match Polar(r,θ) = (1,1)
 @assert r == sqrt(2) && θ == π / 4
 ```
-
 The `extract` function should return either a tuple of values to be matched by subpatterns or `nothing`.
+
+Extractors can also be used to ignore or transform fields of existing types during matching.
+For example, this extractor ignores the `annos` field of the `AddExpr` type:
+```julia
+struct AddExpr
+    left
+    right
+    annos
+end
+function Match.extract(::Type{AddExpr}, e::AddExpr)
+    return (e.left, e.right)
+end
+@match AddExpr(x, y) = node
+```
+When matching, if the extractor fails, the struct is matched using the existing fields.
+Thus, in the above example, you can still match the `annos` field if desired:
+```julia
+@match AddExpr(x, y, annos) = node
+```
 
 Extractors can be used to implement more user-friendly matching for types defined with `SumTypes.jl` or
 other packages.
