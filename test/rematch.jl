@@ -82,6 +82,24 @@ file = Symbol(@__FILE__)
         end
     end
 
+    @testset "missing type or extractor" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Bar(x, y) => (x, y)
+                    _ => false
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: Could not bind `Bar` as a type (due to `UndefVarError(:Bar)`)."
+            end
+        end
+    end
+
     @testset "location of error for redundant field patterns 1" begin
         let line = 0
             try
@@ -481,14 +499,6 @@ end
     end
     @test (@eval @match Foo(1,1) begin
         Polar(r,θ) => r == sqrt(2) && θ == π / 4
-        _ => false
-    end)
-end
-
-@testset "extractor function missing" begin
-    # Bar is neither a type nor an extractor function
-    @test_throws LoadError (@eval @match Foo(1,1) begin
-        Bar(0) => true
         _ => false
     end)
 end
