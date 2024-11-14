@@ -92,9 +92,9 @@ Otherwise `2` is the result.
 ## Extractors
 
 Struct patterns of the form `T(x,y,z)` can be overridden by defining an _extractor_ function for `T`.
-When a value `v` of is being matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
+When a value `v` is matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
 The value `v` need not be of type `T`.
-If `extract` returns a non-tuple (usually `nothing`), the `v` is checked against struct type `T` with it fields checked against the patterns `x, y, z`.
+If the result of the `extract` call does not match the `(x,y,z)` tuple pattern, the value `v` is checked against struct type `T`, as usual, with its fields checked against the patterns `x, y, z`.
 
 For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
 ```julia
