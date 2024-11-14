@@ -94,7 +94,7 @@ Otherwise `2` is the result.
 Struct patterns of the form `T(x,y,z)` can be overridden by defining an _extractor_ function for `T`.
 When a value `v` is matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
 The value `v` need not be of type `T`.
-If the result of the `extract` call does not match the `(x,y,z)` tuple pattern, the value `v` is checked against struct type `T`, as usual, with its fields checked against the patterns `x, y, z`.
+If the result of the `extract` call is `nothing`, the value `v` is checked against the struct type `T`, as usual, with its fields checked against the subpatterns `x`, `y`, and `z`.
 
 For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
 ```julia
@@ -124,11 +124,6 @@ function Match.extract(::Type{AddExpr}, e::AddExpr)
     return (e.left, e.right)
 end
 @match AddExpr(x, y) = node
-```
-When matching, if the extractor fails, the struct is matched using the existing fields.
-Thus, in the above example, you can still match the `annos` field if desired:
-```julia
-@match AddExpr(x, y, annos) = node
 ```
 
 Extractors can be used to implement more user-friendly matching for types defined with `SumTypes.jl` or
