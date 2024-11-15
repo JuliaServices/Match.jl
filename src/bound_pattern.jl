@@ -126,6 +126,20 @@ function Base.:(==)(a::BoundWhereTestPattern, b::BoundWhereTestPattern)
     a.input == b.input && a.inverted == b.inverted
 end
 
+# A pattern like ::@NamedTuple{x} which matches if the value has the given field.
+struct BoundPropertyTestPattern <: BoundTestPattern
+    location::LineNumberNode
+    source::Any
+    input::Symbol
+    property::Symbol
+end
+function Base.hash(a::BoundPropertyTestPattern, h::UInt64)
+    hash((a.input, a.property, 0x8804e55c8cb98266), h)
+end
+function Base.:(==)(a::BoundPropertyTestPattern, b::BoundPropertyTestPattern)
+    a.input == b.input && a.property == b.property
+end
+
 # A pattern like ::Type which matches if the type matches.
 struct BoundTypeTestPattern <: BoundTestPattern
     location::LineNumberNode

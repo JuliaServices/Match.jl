@@ -22,6 +22,20 @@ struct Foo
     y
 end
 
+struct Polar1 end
+struct Polar2 end
+struct Polar3 end
+struct Diff end
+struct Foo1 end
+struct Foo2
+    x
+    y
+end
+struct Foo3
+    x
+    y
+end
+
 ##########
 
 abstract type RBTree end

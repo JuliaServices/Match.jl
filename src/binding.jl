@@ -264,53 +264,38 @@ function bind_pattern!(
 
         # First try the extractor, then try the struct type.
         disjuncts = BoundPattern[]
-        extractor_temp = nothing
 
-        # Try the extractor first.
-        # This only works with positional arguments.
-        # TODO support named tuples
-        if match_positionally
-            # Check if there is an extractor method for the pattern type.
-            methods = Base.methods(Match.extract, (Type{bound_type}, Any,))
-            # There is always at least one method (the default), so we know the extractor
-            # method is implemented if there's at least two methods.
-            if length(methods) >= 2
-                conjuncts = BoundPattern[]
-                # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
-                fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
-                extractor_temp = push_pattern!(conjuncts, binder, fetch)
-                subpattern, assigned = bind_pattern!(location,
-                    Expr(:tuple, subpatterns...), extractor_temp, binder, assigned)
-                push!(conjuncts, subpattern)
-                push!(disjuncts, BoundAndPattern(location, source, conjuncts))
+        # Check if there is an extractor method for the pattern type.
+        # There is always at least one method (the default), so we know the extractor
+        # method is implemented if there's at least two methods.
+        is_extractor = length(Base.methods(Match.extract, (Type{bound_type}, Any,))) >= 2
+
+        if is_extractor
+            conjuncts = BoundPattern[]
+            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
+            fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
+            extractor_temp = push_pattern!(conjuncts, binder, fetch)
+            if match_positionally
+                tuple_source = Expr(:tuple, subpatterns...)
+            else
+                tuple_source = Expr(:tuple, Expr(:parameters, subpatterns...))
             end
-        end
-
-        # If the extractor failed, try the field-by-field match.
-        type_conjuncts = BoundPattern[]
-
-        if isnothing(extractor_temp)
-            # Ensure that the extractor actually failed.
-            # Otherwise, we could have an ambiguity between the type pattern and the extractor pattern.
-            if !isnothing(extractor_temp)
-                pattern0 = BoundTypeTestPattern(location, :( Base.Nothing ), extractor_temp, Nothing)
-                push!(type_conjuncts, pattern0)
-            end
+            subpattern, assigned = bind_pattern!(location, tuple_source, extractor_temp, binder, assigned)
+            push!(conjuncts, subpattern)
+            pattern = BoundAndPattern(location, source, conjuncts)
+        else
+            # If there is no extractor, use the field-by-field match.
+            conjuncts = BoundPattern[]
 
             field_names::Tuple = match_fieldnames(bound_type)
 
             if match_positionally && len != length(field_names)
                 # If the extractor is defined, silently fail if the field-by-field match fails.
-                if isnothing(extractor_temp)
-                    error("$(location.file):$(location.line): The type `$bound_type` has " *
-                            "$(length(field_names)) fields but the pattern expects $len fields.")
-                else
-                    pattern0 = BoundFalsePattern(location, source)
-                    push!(type_conjuncts, pattern0)
-                end
+                error("$(location.file):$(location.line): The type `$bound_type` has " *
+                        "$(length(field_names)) fields but the pattern expects $len fields.")
             else
                 pattern0 = BoundTypeTestPattern(location, T, input, bound_type)
-                push!(type_conjuncts, pattern0)
+                push!(conjuncts, pattern0)
 
                 for i in 1:len
                     pat = subpatterns[i]
@@ -322,10 +307,8 @@ function bind_pattern!(
                         field_name = pat.args[1]
                         pattern_source = pat.args[2]
                         if !(field_name in field_names)
-                            if isnothing(extractor_temp)
-                                error("$(location.file):$(location.line): Type `$bound_type` has " *
-                                        "no field `$field_name`.")
-                            end
+                            error("$(location.file):$(location.line): Type `$bound_type` has " *
+                                    "no field `$field_name`.")
                         end
                     end
 
@@ -344,18 +327,15 @@ function bind_pattern!(
                     @assert field_type !== nothing
 
                     fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
-                    field_temp = push_pattern!(type_conjuncts, binder, fetch)
+                    field_temp = push_pattern!(conjuncts, binder, fetch)
                     bound_subpattern, assigned = bind_pattern!(
                         location, pattern_source, field_temp, binder, assigned)
-                    push!(type_conjuncts, bound_subpattern)
+                    push!(conjuncts, bound_subpattern)
                 end
             end
 
-            pattern = BoundAndPattern(location, source, type_conjuncts)
-            push!(disjuncts, pattern)
+            pattern = BoundAndPattern(location, source, conjuncts)
         end
-
-        pattern = BoundOrPattern(location, source, disjuncts)
 
     elseif is_expr(source, :(&&), 2)
         # conjunction: `(a && b)` where `a` and `b` are patterns.
@@ -420,9 +400,72 @@ function bind_pattern!(
         # disjunction: `(a | b)` where `a` and `b` are patterns.
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
 
+    elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
+        # named tuples (; x=p, y=q; z)
+        parameters = source.args[1]
+
+        conjuncts = BoundPattern[]
+
+        # Check that all the named fields exist.
+        # We'd like to just test that input isa @NamedTuple($(field_names)...)
+        # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
+        # type Any. Instead, we just check that each field exists.
+        for param in parameters.args
+            if is_expr(param, :kw)
+                field_name = param.args[1]
+            elseif param isa Symbol
+                # (; x)
+                field_name = param
+            else
+                continue
+            end
+            pattern = shred_where_clause(
+                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
+                false, location, binder, assigned)
+            push!(conjuncts, pattern)
+        end
+
+        # Check that all the fields exist.
+        # T = :( @NamedTuple($(field_names)...) )
+        # bound_type = bind_type(location, T, input, binder)
+        # pattern = BoundTypeTestPattern(location, source, input, bound_type)
+        # push!(conjuncts, pattern)
+
+        for param in parameters.args
+            if is_expr(param, :kw, 2)
+                # (; x = v)
+                field_name = param.args[1]
+                pattern_source = param.args[2]
+            elseif is_expr(param, :kw, 1)
+                # (; x)
+                field_name = param.args[1]
+                pattern_source = param.args[1]
+            elseif param isa Symbol
+                # (; x)
+                field_name = param
+                pattern_source = param
+            else
+                error("$(location.file):$(location.line): Unexpected named parameter " *
+                    "`$param` in named tuple pattern `$source`.")
+            end
+            # TODO we should check that the field actually exists.
+            fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, Any)
+            field_temp = push_pattern!(conjuncts, binder, fetch)
+            bound_subpattern, assigned = bind_pattern!(
+                location, pattern_source, field_temp, binder, assigned)
+            push!(conjuncts, bound_subpattern)
+        end
+
+        pattern = BoundAndPattern(location, source, conjuncts)
+
     elseif is_expr(source, :tuple) || is_expr(source, :vect)
         # array or tuple
         subpatterns = source.args
+
+        if any(arg -> is_expr(arg, :parameters), subpatterns)
+            error("$(location.file):$(location.line): Cannot mix named and positional parameters in pattern `$source`.")
+        end
+
         splat_count = count(s -> is_expr(s, :...), subpatterns)
         if splat_count > 1
             error("$(location.file):$(location.line): More than one `...` in " *

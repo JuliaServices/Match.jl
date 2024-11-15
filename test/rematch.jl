@@ -493,18 +493,36 @@ end
 end
 
 @testset "extractor function" begin
-    @eval struct Polar end
-    @eval function Match.extract(::Type{Polar}, p::Foo)
+    @eval function Match.extract(::Type{Polar1}, p::Foo)
         return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
     end
     @test (@eval @match Foo(1,1) begin
-        Polar(r,θ) => r == sqrt(2) && θ == π / 4
+        Polar1(r,θ) => r == sqrt(2) && θ == π / 4
+        _ => false
+    end)
+end
+
+@testset "extractor function with named parameters" begin
+    @eval function Match.extract(::Type{Polar2}, p::Foo)
+        return (; radius = sqrt(p.x^2 + p.y^2), angle = atan(p.y, p.x))
+    end
+    @test (@eval @match Foo(1,1) begin
+        Polar2(radius=r,angle=θ) => r == sqrt(2) && θ == π / 4
+        _ => false
+    end)
+end
+
+@testset "extractor function with named parameters, positional matching" begin
+    @eval function Match.extract(::Type{Polar3}, p::Foo)
+        return (; radius = sqrt(p.x^2 + p.y^2), angle = atan(p.y, p.x))
+    end
+    @test_broken (@eval @match Foo(1,1) begin
+        Polar3(r,θ) => r == sqrt(2) && θ == π / 4
         _ => false
     end)
 end
 
 @testset "extractor function that might fail" begin
-    @eval struct Diff end
     @eval function Match.extract(::Type{Diff}, p::Foo)
         return p.x >= p.y ? (p.x - p.y,) : nothing
     end
@@ -527,43 +545,78 @@ end
 end
 
 @testset "nested extractor function" begin
-    @eval struct Q end
-    @eval function Match.extract(::Type{Q}, p::Foo)
+    @eval function Match.extract(::Type{Foo1}, p::Foo)
         return (p.x, p.y)
     end
     @test (@eval @match Foo(Foo(1,2),3) begin
-        Q(Q(1,2),3) => true
+        Foo1(Foo1(1,2),3) => true
         _ => false
     end)
 end
 
-@testset "extract from existing type" begin
-    @eval struct P
-        x
-        y
+@testset "nested extractor function with named parameters" begin
+    @eval function Match.extract(::Type{Foo1}, p::Foo)
+        return (; x=p.x, y=p.y)
     end
-    @eval function Match.extract(::Type{P}, p::P)
+    @test (@eval @match Foo(Foo(1,2),3) begin
+        Foo1(x=Foo1(x=1,y=2),y=3) => true
+        _ => false
+    end)
+end
+
+@testset "extract to override type match" begin
+    @eval function Match.extract(::Type{Foo2}, p::Foo2)
         # flip the arguments.
         return (p.y, p.x)
     end
-    @test (@eval @match P(P(1,2),3) begin
-        P(3,P(2,1)) => true
+    @test (@eval @match Foo2(Foo2(1,2),3) begin
+        Foo2(3,Foo2(2,1)) => true
         _ => false
     end)
 end
 
-@testset "extract from existing type 2" begin
-    @eval struct P
-        x
-        y
-    end
-    @eval function Match.extract(::Type{P}, p::P)
+@testset "extract to override type match 2" begin
+    @eval function Match.extract(::Type{Foo3}, p::Foo3)
         return (p.x,)
     end
-    @test (@eval @match P(P(1,2),3) begin
-        # the outer P uses the extractor, the inner P uses the type
-        P(P(1)) => true
+    @test (@eval @match Foo3(Foo3(1,2),3) begin
+        Foo3(Foo3(1)) => true
         _ => false
+    end)
+end
+
+# match against named tuples
+@testset "Named tuples" begin
+    @test (@match Foo(1,2) begin
+        (; x=1, y=2) => true
+    end)
+
+    # Duplicate field names are allowed
+    @test (@match Foo(1,2) begin
+        (; x=1, x=(::Int)) => true
+    end)
+
+    # Named tuples with `=` do not bind the field names
+    err = (VERSION < v"1.11-") ? UndefVarError(:x) : UndefVarError(:x, @__MODULE__)
+    @test_throws err (@match Foo(1,2) begin
+        (; x=1, y) => (x, y)
+    end) == (1, 2)
+
+    @test (@match Foo(1,2) begin
+        (; x=1, y) => y
+    end) == 2
+
+    @test (@match Foo(1,2) begin
+        (; x, y) => (x, y)
+    end) == (1, 2)
+
+    @test (@match Foo(1,2) begin
+      (; x) => x
+    end) == 1
+
+    @test (@match Foo(1,2) begin
+      (; x, y, z) => false
+      _ => true
     end)
 end
 
