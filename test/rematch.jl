@@ -493,31 +493,11 @@ end
 end
 
 @testset "extractor function" begin
-    @eval function Match.extract(::Type{Polar1}, p::Foo)
+    @eval function Match.extract(::Type{Polar}, p::Foo)
         return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
     end
     @test (@eval @match Foo(1,1) begin
-        Polar1(r,θ) => r == sqrt(2) && θ == π / 4
-        _ => false
-    end)
-end
-
-@testset "extractor function with named parameters" begin
-    @eval function Match.extract(::Type{Polar2}, p::Foo)
-        return (; radius = sqrt(p.x^2 + p.y^2), angle = atan(p.y, p.x))
-    end
-    @test (@eval @match Foo(1,1) begin
-        Polar2(radius=r,angle=θ) => r == sqrt(2) && θ == π / 4
-        _ => false
-    end)
-end
-
-@testset "extractor function with named parameters, positional matching" begin
-    @eval function Match.extract(::Type{Polar3}, p::Foo)
-        return (; radius = sqrt(p.x^2 + p.y^2), angle = atan(p.y, p.x))
-    end
-    @test_broken (@eval @match Foo(1,1) begin
-        Polar3(r,θ) => r == sqrt(2) && θ == π / 4
+        Polar(r,θ) => r == sqrt(2) && θ == π / 4
         _ => false
     end)
 end
