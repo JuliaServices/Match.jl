@@ -352,9 +352,72 @@ function bind_pattern!(
         # disjunction: `(a | b)` where `a` and `b` are patterns.
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
 
+    elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
+        # named tuples (; x=p, y=q; z)
+        parameters = source.args[1]
+
+        conjuncts = BoundPattern[]
+
+        # Check that all the named fields exist.
+        # We'd like to just test that input isa @NamedTuple($(field_names)...)
+        # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
+        # type Any. Instead, we just check that each field exists.
+        for param in parameters.args
+            if is_expr(param, :kw)
+                field_name = param.args[1]
+            elseif param isa Symbol
+                # (; x)
+                field_name = param
+            else
+                continue
+            end
+            pattern = shred_where_clause(
+                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
+                false, location, binder, assigned)
+            push!(conjuncts, pattern)
+        end
+
+        # Check that all the fields exist.
+        # T = :( @NamedTuple($(field_names)...) )
+        # bound_type = bind_type(location, T, input, binder)
+        # pattern = BoundTypeTestPattern(location, source, input, bound_type)
+        # push!(conjuncts, pattern)
+
+        for param in parameters.args
+            if is_expr(param, :kw, 2)
+                # (; x = v)
+                field_name = param.args[1]
+                pattern_source = param.args[2]
+            elseif is_expr(param, :kw, 1)
+                # (; x)
+                field_name = param.args[1]
+                pattern_source = param.args[1]
+            elseif param isa Symbol
+                # (; x)
+                field_name = param
+                pattern_source = param
+            else
+                error("$(location.file):$(location.line): Unexpected named parameter " *
+                    "`$param` in named tuple pattern `$source`.")
+            end
+            # TODO we should check that the field actually exists.
+            fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, Any)
+            field_temp = push_pattern!(conjuncts, binder, fetch)
+            bound_subpattern, assigned = bind_pattern!(
+                location, pattern_source, field_temp, binder, assigned)
+            push!(conjuncts, bound_subpattern)
+        end
+
+        pattern = BoundAndPattern(location, source, conjuncts)
+
     elseif is_expr(source, :tuple) || is_expr(source, :vect)
         # array or tuple
         subpatterns = source.args
+
+        if any(arg -> is_expr(arg, :parameters), subpatterns)
+            error("$(location.file):$(location.line): Cannot mix named and positional parameters in pattern `$source`.")
+        end
+
         splat_count = count(s -> is_expr(s, :...), subpatterns)
         if splat_count > 1
             error("$(location.file):$(location.line): More than one `...` in " *
@@ -410,7 +473,7 @@ function bind_pattern!(
         pattern0, assigned = bind_pattern!(location, subpattern, input, binder, assigned)
         pattern1 = shred_where_clause(guard, false, location, binder, assigned)
         pattern = BoundAndPattern(location, source, BoundPattern[pattern0, pattern1])
-    
+
     elseif is_expr(source, :if, 2)
         # if expr end
         if !is_empty_block(source.args[2])
