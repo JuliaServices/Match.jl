@@ -26,6 +26,7 @@ struct Polar1 end
 struct Polar2 end
 struct Polar3 end
 struct Diff end
+struct Foo0 end
 struct Foo1 end
 struct Foo2
     x

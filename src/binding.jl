@@ -271,15 +271,12 @@ function bind_pattern!(
         is_extractor = length(Base.methods(Match.extract, (Type{bound_type}, Any,))) >= 2
 
         if is_extractor
+            @assert match_positionally error("$(location.file):$(location.line): Named arguments are not supported for extractor pattern `$source`.")
             conjuncts = BoundPattern[]
             # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
             fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
             extractor_temp = push_pattern!(conjuncts, binder, fetch)
-            if match_positionally
-                tuple_source = Expr(:tuple, subpatterns...)
-            else
-                tuple_source = Expr(:tuple, Expr(:parameters, subpatterns...))
-            end
+            tuple_source = Expr(:tuple, subpatterns...)
             subpattern, assigned = bind_pattern!(location, tuple_source, extractor_temp, binder, assigned)
             push!(conjuncts, subpattern)
             pattern = BoundAndPattern(location, source, conjuncts)
@@ -399,64 +396,6 @@ function bind_pattern!(
     elseif is_expr(source, :call, 3) && source.args[1] == :|
         # disjunction: `(a | b)` where `a` and `b` are patterns.
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
-
-    elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
-        # named tuples (; x=p, y=q; z)
-        parameters = source.args[1]
-
-        conjuncts = BoundPattern[]
-
-        # Check that all the named fields exist.
-        # We'd like to just test that input isa @NamedTuple($(field_names)...)
-        # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
-        # type Any. Instead, we just check that each field exists.
-        for param in parameters.args
-            if is_expr(param, :kw)
-                field_name = param.args[1]
-            elseif param isa Symbol
-                # (; x)
-                field_name = param
-            else
-                continue
-            end
-            pattern = shred_where_clause(
-                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
-                false, location, binder, assigned)
-            push!(conjuncts, pattern)
-        end
-
-        # Check that all the fields exist.
-        # T = :( @NamedTuple($(field_names)...) )
-        # bound_type = bind_type(location, T, input, binder)
-        # pattern = BoundTypeTestPattern(location, source, input, bound_type)
-        # push!(conjuncts, pattern)
-
-        for param in parameters.args
-            if is_expr(param, :kw, 2)
-                # (; x = v)
-                field_name = param.args[1]
-                pattern_source = param.args[2]
-            elseif is_expr(param, :kw, 1)
-                # (; x)
-                field_name = param.args[1]
-                pattern_source = param.args[1]
-            elseif param isa Symbol
-                # (; x)
-                field_name = param
-                pattern_source = param
-            else
-                error("$(location.file):$(location.line): Unexpected named parameter " *
-                    "`$param` in named tuple pattern `$source`.")
-            end
-            # TODO we should check that the field actually exists.
-            fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, Any)
-            field_temp = push_pattern!(conjuncts, binder, fetch)
-            bound_subpattern, assigned = bind_pattern!(
-                location, pattern_source, field_temp, binder, assigned)
-            push!(conjuncts, bound_subpattern)
-        end
-
-        pattern = BoundAndPattern(location, source, conjuncts)
 
     elseif is_expr(source, :tuple) || is_expr(source, :vect)
         # array or tuple

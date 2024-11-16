@@ -545,21 +545,11 @@ end
 end
 
 @testset "nested extractor function" begin
-    @eval function Match.extract(::Type{Foo1}, p::Foo)
+    @eval function Match.extract(::Type{Foo0}, p::Foo)
         return (p.x, p.y)
     end
     @test (@eval @match Foo(Foo(1,2),3) begin
-        Foo1(Foo1(1,2),3) => true
-        _ => false
-    end)
-end
-
-@testset "nested extractor function with named parameters" begin
-    @eval function Match.extract(::Type{Foo1}, p::Foo)
-        return (; x=p.x, y=p.y)
-    end
-    @test (@eval @match Foo(Foo(1,2),3) begin
-        Foo1(x=Foo1(x=1,y=2),y=3) => true
+        Foo0(Foo0(1,2),3) => true
         _ => false
     end)
 end
@@ -582,41 +572,6 @@ end
     @test (@eval @match Foo3(Foo3(1,2),3) begin
         Foo3(Foo3(1)) => true
         _ => false
-    end)
-end
-
-# match against named tuples
-@testset "Named tuples" begin
-    @test (@match Foo(1,2) begin
-        (; x=1, y=2) => true
-    end)
-
-    # Duplicate field names are allowed
-    @test (@match Foo(1,2) begin
-        (; x=1, x=(::Int)) => true
-    end)
-
-    # Named tuples with `=` do not bind the field names
-    err = (VERSION < v"1.11-") ? UndefVarError(:x) : UndefVarError(:x, @__MODULE__)
-    @test_throws err (@match Foo(1,2) begin
-        (; x=1, y) => (x, y)
-    end) == (1, 2)
-
-    @test (@match Foo(1,2) begin
-        (; x=1, y) => y
-    end) == 2
-
-    @test (@match Foo(1,2) begin
-        (; x, y) => (x, y)
-    end) == (1, 2)
-
-    @test (@match Foo(1,2) begin
-      (; x) => x
-    end) == 1
-
-    @test (@match Foo(1,2) begin
-      (; x, y, z) => false
-      _ => true
     end)
 end
 
