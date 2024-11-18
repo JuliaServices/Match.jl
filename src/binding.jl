@@ -66,21 +66,6 @@ function bind_type(location, T, input, binder)
 
     bound_type
 end
-function try_bind_type(location, T, input, binder)
-     # bind type at macro expansion time in the caller's module.
-    bound_type = nothing
-    try
-        bound_type = Core.eval(binder.mod, Expr(:block, location, T))
-    catch ex
-        return nothing
-    end
-
-    if !(bound_type isa Type)
-        return nothing
-    end
-
-    return bound_type
-end
 
 function simple_name(s::Symbol)
     simple_name(string(s))
