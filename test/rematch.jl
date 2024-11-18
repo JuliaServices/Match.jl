@@ -519,8 +519,15 @@ end
     @test (@match Foo(1,2) begin
       (; x, y, z) => false # No field `z`.
       (; x) => true
-      (; x, y) => true
-      _ => true
+      (; x, y) => false
+      _ => false
+    end)
+
+    # Check that we don't match if a field does not exist.
+    @test (@match Foo(1,2) begin
+      (; x, y, z) => false # No field `z`.
+      (; x) => true
+      _ => false
     end)
 end
 
