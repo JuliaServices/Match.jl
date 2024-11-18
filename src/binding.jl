@@ -384,10 +384,6 @@ function bind_pattern!(
         # array or tuple
         subpatterns = source.args
 
-        if any(arg -> is_expr(arg, :parameters), subpatterns)
-            error("$(location.file):$(location.line): Cannot mix named and positional parameters in pattern `$source`.")
-        end
-
         splat_count = count(s -> is_expr(s, :...), subpatterns)
         if splat_count > 1
             error("$(location.file):$(location.line): More than one `...` in " *
