@@ -87,7 +87,7 @@ file = Symbol(@__FILE__)
             try
                 line = (@__LINE__) + 2
                 @eval @match Foo(1, 2) begin
-                    Bar(x, y) => (x, y)
+                    Unknown(x, y) => (x, y)
                     _ => false
                 end
                 @test false
@@ -95,7 +95,8 @@ file = Symbol(@__FILE__)
                 @test ex isa LoadError
                 e = ex.error
                 @test e isa ErrorException
-                @test e.msg == "$file:$line: Could not bind `Bar` as a type (due to `UndefVarError(:Bar)`)."
+                err = (VERSION < v"1.11-") ? UndefVarError(:Unknown) : UndefVarError(:Unknown, @__MODULE__)
+                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `$err`)."
             end
         end
     end
