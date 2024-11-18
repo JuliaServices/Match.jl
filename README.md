@@ -92,11 +92,14 @@ Otherwise `2` is the result.
 ## Extractors
 
 Struct patterns of the form `T(x,y,z)` can be overridden by defining an _extractor_ function for `T`.
-When a value `v` is matched against a pattern `T(x,y,z)`, `Match.extract(T, v)` is called and the result is then matched against the tuple pattern `(x,y,z)`.
+When a value `v` is matched against a pattern `T(x,y,z)`, if `Match.extract(::Type{T}, v)` is defined, `extract(T, v)` is called  and the result is then matched against the tuple pattern `(x,y,z)`.
 The value `v` need not be of type `T`.
-If the result of the `extract` call is `nothing`, the value `v` is checked against the struct type `T`, as usual, with its fields checked against the subpatterns `x`, `y`, and `z`.
+If the result of the `extract` call is `nothing` or does not match `(x,y,z)`, then the match fails.
+If `extract` is not defined for `T`, the value `v` is checked against the struct type `T`, as usual,
+with its fields checked against the subpatterns `x`, `y`, and `z`.
 
-For example, to match a pair of numbers using Polar coordinates, extracting the radius and angle, you could define:
+For example, to match a pair of numbers using polar coordinates, extracting the radius and angle,
+you could define:
 ```julia
 struct Polar end
 function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
@@ -104,13 +107,15 @@ function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
     return (sqrt(x^2 + y^2), atan(y, x))
 end
 ```
-This definition allows you to use a new `Polar` extractor pattern:
+This definition allows you to use a new `Polar` pattern:
 ```julia
-@match Polar(r,θ) = (1,1)
-@assert r == sqrt(2) && θ == π / 4
+@match (1,1) begin
+    Polar(r,θ) => @assert r == sqrt(2) && θ == π / 4
+end
 ```
 
-The `extract` function should return either a tuple of values to be matched by the subpatterns or return `nothing`.
+The `extract` function should return either a tuple of values to be matched by the subpatterns
+or return `nothing`. Named parameters are not supported.
 
 Extractors can also be used to ignore or transform fields of existing types during matching.
 For example, this extractor ignores the `annos` field of the `AddExpr` type:
@@ -126,7 +131,8 @@ end
 @match AddExpr(x, y) = node
 ```
 
-Extractors can be used to implement more user-friendly matching for types defined with `SumTypes.jl` or
+Extractors allow you to abstract from the concrete implementation of the struct type. For example, they
+can be used to implement more user-friendly pattern matching for types defined with `SumTypes.jl` or
 other packages.
 
 ## Differences from previous versions of `Match.jl`
