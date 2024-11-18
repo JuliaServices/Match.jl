@@ -354,28 +354,9 @@ function bind_pattern!(
 
     elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
         # named tuples (; x=p, y=q; z)
-        parameters = source.args[1]
+        params = source.args[1]
 
         conjuncts = BoundPattern[]
-
-        # Check that all the named fields exist.
-        # We'd like to just test that input isa @NamedTuple($(field_names)...)
-        # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
-        # type Any. Instead, we just check that each field exists.
-        for param in parameters.args
-            if is_expr(param, :kw)
-                field_name = param.args[1]
-            elseif param isa Symbol
-                # (; x)
-                field_name = param
-            else
-                continue
-            end
-            pattern = shred_where_clause(
-                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
-                false, location, binder, assigned)
-            push!(conjuncts, pattern)
-        end
 
         # Check that all the fields exist.
         # T = :( @NamedTuple($(field_names)...) )
@@ -383,24 +364,19 @@ function bind_pattern!(
         # pattern = BoundTypeTestPattern(location, source, input, bound_type)
         # push!(conjuncts, pattern)
 
-        for param in parameters.args
-            if is_expr(param, :kw, 2)
-                # (; x = v)
-                field_name = param.args[1]
-                pattern_source = param.args[2]
-            elseif is_expr(param, :kw, 1)
-                # (; x)
-                field_name = param.args[1]
-                pattern_source = param.args[1]
-            elseif param isa Symbol
-                # (; x)
-                field_name = param
-                pattern_source = param
-            else
-                error("$(location.file):$(location.line): Unexpected named parameter " *
-                    "`$param` in named tuple pattern `$source`.")
-            end
-            # TODO we should check that the field actually exists.
+        for param in params.args
+            (field_name, pattern_source) = parse_kw_param(param, location, source)
+
+            # Check that the field exists.
+            # We'd like to just test that input isa @NamedTuple($(field_names)...)
+            # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
+            # type Any.
+            pattern = shred_where_clause(
+                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
+                false, location, binder, assigned)
+            push!(conjuncts, pattern)
+
+            # Bind the field pattern.
             fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, Any)
             field_temp = push_pattern!(conjuncts, binder, fetch)
             bound_subpattern, assigned = bind_pattern!(
@@ -504,6 +480,30 @@ end
 function push_pattern!(patterns::Vector{BoundPattern}, binder::BinderContext, pat::BoundFetchPattern)
     push!(patterns, pat)
     get_temp(binder, pat)
+end
+
+function parse_kw_param(param, location, source)
+    if is_expr(param, :kw, 2)
+        # (; x = v)
+        field_name = param.args[1]
+        pattern_source = param.args[2]
+    elseif is_expr(param, :kw, 1)
+        # (; x)
+        field_name = param.args[1]
+        pattern_source = param.args[1]
+    elseif is_expr(param, :(::), 2) && param.args[1] isa Symbol
+        # (; x)
+        field_name = param.args[1]
+        pattern_source = Expr(:(::), param.args[2])
+    elseif param isa Symbol
+        # (; x)
+        field_name = param
+        pattern_source = param
+    else
+        error("$(location.file):$(location.line): Unexpected named parameter " *
+            "`$param` in named tuple pattern `$source`.")
+    end
+    return (field_name, pattern_source)
 end
 
 function split_where(T, location)
