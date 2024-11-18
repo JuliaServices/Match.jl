@@ -383,7 +383,6 @@ function bind_pattern!(
     elseif is_expr(source, :tuple) || is_expr(source, :vect)
         # array or tuple
         subpatterns = source.args
-
         splat_count = count(s -> is_expr(s, :...), subpatterns)
         if splat_count > 1
             error("$(location.file):$(location.line): More than one `...` in " *
