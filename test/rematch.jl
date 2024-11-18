@@ -500,26 +500,22 @@ end
         (; x) => true
     end)
 
-    @test (@match Foo(1,2) begin
-        (; x=1, y) => (x, y)
-    end) == (1,2)
-
-    @test (@match Foo(1,2) begin
-        (; x=z, y) => (x, y, z)
-    end) == (1,2,1)
-
-    @test (@match Foo(1,2) begin
-        (; x=1, y) => y
-    end) == 2
-
+    # Check that field names are bound.
     @test (@match Foo(1,2) begin
         (; x, y) => (x, y)
     end) == (1, 2)
 
+    # Check that field names are bound for `=` and `::` patterns too.
     @test (@match Foo(1,2) begin
-      (; x) => x
-    end) == 1
+        (; x=1, y::Int) => (x, y)
+    end) == (1,2)
 
+    # Check that patterns after `=` also bind.
+    @test (@match Foo(1,2) begin
+        (; x=z, y) => (x, y, z)
+    end) == (1,2,1)
+
+    # Check that we don't match if a field does not exist.
     @test (@match Foo(1,2) begin
       (; x, y, z) => false # No field `z`.
       (; x) => true
