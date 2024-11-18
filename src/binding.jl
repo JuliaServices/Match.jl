@@ -484,17 +484,15 @@ end
 
 function parse_kw_param(param, location, source)
     if is_expr(param, :kw, 2)
-        # (; x = v)
+        # (; x = p)
         field_name = param.args[1]
-        pattern_source = param.args[2]
-    elseif is_expr(param, :kw, 1)
-        # (; x)
-        field_name = param.args[1]
-        pattern_source = param.args[1]
+        # bind both the field name and pattern p
+        pattern_source = Expr(:(&&), param.args...)
     elseif is_expr(param, :(::), 2) && param.args[1] isa Symbol
-        # (; x)
+        # (; x::T)
         field_name = param.args[1]
-        pattern_source = Expr(:(::), param.args[2])
+        # bind both the field name and pattern `::T`
+        pattern_source = param
     elseif param isa Symbol
         # (; x)
         field_name = param

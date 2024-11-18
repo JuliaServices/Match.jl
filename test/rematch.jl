@@ -476,20 +476,37 @@ end
 
 # match against named tuples
 @testset "Named tuples" begin
+    @test (@match (; x=1, y=2) begin
+        (; x=1, y=2) => true
+    end)
+
     @test (@match Foo(1,2) begin
         (; x=1, y=2) => true
     end)
 
-    # Duplicate field names are allowed
     @test (@match Foo(1,2) begin
-        (; x=1, x=(::Int)) => true
+        (; y=2, x=1) => true
     end)
 
-    # Named tuples with `=` do not bind the field names
-    err = (VERSION < v"1.11-") ? UndefVarError(:x) : UndefVarError(:x, @__MODULE__)
-    @test_throws err (@match Foo(1,2) begin
+    @test (@match Foo(1,2) begin
+        (; x=1) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x::Int) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x) => true
+    end)
+
+    @test (@match Foo(1,2) begin
         (; x=1, y) => (x, y)
-    end) == (1, 2)
+    end) == (1,2)
+
+    @test (@match Foo(1,2) begin
+        (; x=z, y) => (x, y, z)
+    end) == (1,2,1)
 
     @test (@match Foo(1,2) begin
         (; x=1, y) => y
@@ -504,7 +521,9 @@ end
     end) == 1
 
     @test (@match Foo(1,2) begin
-      (; x, y, z) => false
+      (; x, y, z) => false # No field `z`.
+      (; x) => true
+      (; x, y) => true
       _ => true
     end)
 end

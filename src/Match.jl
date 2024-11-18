@@ -54,6 +54,9 @@ The following syntactic forms can be used in patterns:
 * `x` (an identifier) matches anything, binds value to the variable `x`
 * `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
 * `T(y=1)` matches structs of type `T` whose `y` field equals `1`
+* `(;x,y,z)` matches values with fields `x,y,z` binding to variables `x,y,z`.
+* `(;x=p)` matches values with field `x` matching pattern `p`. Also binds `x`.
+* `(;x::T)` matches values with field `x` matching pattern `::T`. Also binds `x`.
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
 * `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
