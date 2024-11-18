@@ -358,19 +358,13 @@ function bind_pattern!(
 
         conjuncts = BoundPattern[]
 
-        # Check that all the fields exist.
-        # T = :( @NamedTuple($(field_names)...) )
-        # bound_type = bind_type(location, T, input, binder)
-        # pattern = BoundTypeTestPattern(location, source, input, bound_type)
-        # push!(conjuncts, pattern)
-
         for param in params.args
             (field_name, pattern_source) = parse_kw_param(param, location, source)
 
             # Check that the field exists.
             # We'd like to just test that input isa @NamedTuple($(field_names)...)
-            # But, NamedTuples are not covariant, so that test fails if the tuple elements are not of
-            # type Any.
+            # But, NamedTuples are not covariant, so that test would fail if the tuple element is
+            # not inferred as exactly Any.
             pattern = shred_where_clause(
                 Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
                 false, location, binder, assigned)
