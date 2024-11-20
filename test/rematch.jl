@@ -494,9 +494,6 @@ end
 end
 
 @testset "extractor function" begin
-    @eval function Match.extract(::Type{Polar}, p::Foo)
-        return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
-    end
     @test (@eval @match Foo(1,1) begin
         Polar(r,θ) => r == sqrt(2) && θ == π / 4
         _ => false
@@ -504,9 +501,6 @@ end
 end
 
 @testset "extractor function that might fail" begin
-    @eval function Match.extract(::Type{Diff}, p::Foo)
-        return p.x >= p.y ? (p.x - p.y,) : nothing
-    end
     @test (@eval @match Foo(1,1) begin
         Diff(2) => false
         Diff(1) => false
@@ -526,9 +520,6 @@ end
 end
 
 @testset "nested extractor function" begin
-    @eval function Match.extract(::Type{Foo0}, p::Foo)
-        return (p.x, p.y)
-    end
     @test (@eval @match Foo(Foo(1,2),3) begin
         Foo0(Foo0(1,2),3) => true
         _ => false
@@ -536,10 +527,6 @@ end
 end
 
 @testset "extract to override type match" begin
-    @eval function Match.extract(::Type{Foo2}, p::Foo2)
-        # flip the arguments.
-        return (p.y, p.x)
-    end
     @test (@eval @match Foo2(Foo2(1,2),3) begin
         Foo2(3,Foo2(2,1)) => true
         _ => false
@@ -547,9 +534,6 @@ end
 end
 
 @testset "extract to override type match 2" begin
-    @eval function Match.extract(::Type{Foo3}, p::Foo3)
-        return (p.x,)
-    end
     @test (@eval @match Foo3(Foo3(1,2),3) begin
         Foo3(Foo3(1)) => true
         _ => false
