@@ -44,7 +44,6 @@ for examples of this and other features.
 
 * `_` matches any value
 * `x` (an identifier) matches any value and binds it to the variable `x`
-* `1` (a literal value) matches that value
 * `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
 * `T(y=p)` matches structs of type `T` whose `y` field matches pattern `p`
 * `(;x,y,z)` matches values with fields `x,y,z` binding to variables `x,y,z`
@@ -61,7 +60,9 @@ for examples of this and other features.
 * `x, if condition end` matches only if `condition` is true (`condition` may use any variables that occur earlier in the pattern eg `(x, y, z where x + y > z)`)
 * `x where condition` An alternative form for `x, if condition end`
 * `if condition end` A boolean computed pattern. `x && if condition end` is another way of writing `x where condition`.
-* Anything else is treated as a constant and tested for equality
+* `1` (a literal value) matches that value using `isequal`
+* `r"[a-z]*"` (a regular expression) matches strings that match the regular expression 
+* `1:10` (a constant range) matches values in that range
 * Expressions can be interpolated in as constants via standard interpolation syntax `$(x)`.  Interpolations may use previously bound variables.
 
 Patterns can be nested arbitrarily.
