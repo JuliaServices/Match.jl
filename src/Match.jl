@@ -248,13 +248,18 @@ struct MatchFailure <: Exception
 end
 
 """
-    extract(T::Type, value)
+    extract(T::Type, ::Val{n}, value)
+    extract(T::Type, ::Val{:x1}, ..., ::Val{:xn}, ..., value)
 
-Implement extractor for type `T`, returning a tuple of fields of `value`, or `nothing` if
-the match fails. This can be used to override matching on type `T`. If `extract(T, value)`
-returns a tuple, it will be used instead of the default field extraction.
+Override matching for type `T`, destructuring `value` into its component fields.
+
+Given a struct pattern `T(p1,...,pn)`, if `extract(T, ::Val{n}, v)` is implemented for type
+`T` and arity `n`, it is called and the result will be matched against the tuple pattern
+`(p1,...,pn)`.
+
+The function should return either a tuple of the correct arity, or `nothing` if the match should fail.
 """
-extract(::Type, ::Any) = nothing
+function extract end
 
 # const fields only suppored >= Julia 1.8
 macro _const(x)

@@ -24,35 +24,35 @@ end
 
 # Extractors
 struct Polar end
-function Match.extract(::Type{Polar}, p::Foo)
+function Match.extract(::Type{Polar}, ::Val{2}, p::Foo)
     return (sqrt(p.x^2 + p.y^2), atan(p.y, p.x))
 end
 
 struct Diff end
-function Match.extract(::Type{Diff}, p::Foo)
+function Match.extract(::Type{Diff}, ::Val{1}, p::Foo)
     return p.x >= p.y ? (p.x - p.y,) : nothing
 end
 
 struct Foo0 end
-function Match.extract(::Type{Foo0}, p::Foo)
+function Match.extract(::Type{Foo0}, ::Val{2}, p::Foo)
     return (p.x, p.y)
 end
 struct Foo1 end
-function Match.extract(::Type{Foo1}, p::Foo)
+function Match.extract(::Type{Foo1}, ::Val{2}, p::Foo)
     return (p.y, p.x)
 end
 struct Foo2
     x
     y
 end
-function Match.extract(::Type{Foo2}, p::Foo2)
+function Match.extract(::Type{Foo2}, ::Val{2}, p::Foo2)
     return (p.y, p.x)
 end
 struct Foo3
     x
     y
 end
-function Match.extract(::Type{Foo3}, p::Foo3)
+function Match.extract(::Type{Foo3}, ::Val{1}, p::Foo3)
     return (p.x,)
 end
 

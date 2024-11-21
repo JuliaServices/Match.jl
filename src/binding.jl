@@ -251,14 +251,18 @@ function bind_pattern!(
         disjuncts = BoundPattern[]
 
         # Check if there is an extractor method for the pattern type.
-        # There is always at least one method (the default), so we know the extractor
-        # method is implemented if there's at least two methods.
-        is_extractor = length(Base.methods(Match.extract, (Type{bound_type}, Any,))) >= 2
+        if match_positionally
+            extractor_sig = (Type{bound_type}, Val{len}, Any,)
+        else
+            extractor_sig = (Type{bound_type}, (Val{x} for x in sort(named_fields))..., Any,)
+        end
+        is_extractor = !isempty(Base.methods(Match.extract, extractor_sig))
 
         if is_extractor
+            # Call Match.extract(T) and match the result against the tuple of subpatterns.
+            # TODO remove once named tuples are supported
             @assert match_positionally error("$(location.file):$(location.line): Named arguments are not supported for extractor pattern `$source`.")
             conjuncts = BoundPattern[]
-            # call Match.extract(Val(T), input) and match the result against the tuple of subpatterns
             fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
             extractor_temp = push_pattern!(conjuncts, binder, fetch)
             tuple_source = Expr(:tuple, subpatterns...)
@@ -266,7 +270,7 @@ function bind_pattern!(
             push!(conjuncts, subpattern)
             pattern = BoundAndPattern(location, source, conjuncts)
         else
-            # If there is no extractor, use the field-by-field match.
+            # Use the field-by-field match.
             conjuncts = BoundPattern[]
 
             field_names::Tuple = match_fieldnames(bound_type)

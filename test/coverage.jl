@@ -402,9 +402,6 @@ end # of automaton
 
     @testset "exercise dumpall 3" begin
         devnull = IOBuffer()
-        @eval function Match.extract(::Type{Diff}, p::Foo)
-            return p.x >= p.y ? (p.x - p.y) : nothing
-        end
         Match.@match_dumpall devnull some_value begin
             Diff(_) => 1
             _ => 2
