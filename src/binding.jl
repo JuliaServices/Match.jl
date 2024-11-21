@@ -263,7 +263,7 @@ function bind_pattern!(
             # TODO remove once named tuples are supported
             @assert match_positionally error("$(location.file):$(location.line): Named arguments are not supported for extractor pattern `$source`.")
             conjuncts = BoundPattern[]
-            fetch = BoundFetchExtractorPattern(location, source, input, bound_type, Any)
+            fetch = BoundFetchExtractorPattern(location, source, input, bound_type, len, Any)
             extractor_temp = push_pattern!(conjuncts, binder, fetch)
             tuple_source = Expr(:tuple, subpatterns...)
             subpattern, assigned = bind_pattern!(location, tuple_source, extractor_temp, binder, assigned)
