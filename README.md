@@ -91,18 +91,18 @@ Otherwise `2` is the result.
 
 ## Extractors
 
-Struct patterns of the form `T(x,y,z)` can be overridden by defining an _extractor_ function for `T`.
-When a value `v` is matched against a pattern `T(x,y,z)`, if `Match.extract(::Type{T}, v)` is defined, `extract(T, v)` is called  and the result is then matched against the tuple pattern `(x,y,z)`.
-The value `v` need not be of type `T`.
-If the result of the `extract` call is `nothing` or does not match `(x,y,z)`, then the match fails.
+Struct patterns of the form `T(x1,...,xn)` can be overridden by defining an _extractor_ function for `T`.
+When a value `v` is matched against a pattern `T(x1,...,xn)`, if `Match.extract(::Type{T}, ::Val{n}, _)` is defined for type `T` and arity `n`, `extract(T, Val(n), v)` is called and the result is then matched against the tuple pattern `(x1,...,xn)`.
+The value `v` being matched need not be of type `T`.
+If the result of the `extract` call is `nothing` or does not match `(x1,...,xn)`, then the match fails.
 If `extract` is not defined for `T`, the value `v` is checked against the struct type `T`, as usual,
-with its fields checked against the subpatterns `x`, `y`, and `z`.
+with its fields matched against the subpatterns `x1`, ..., `xn`.
 
 For example, to match a pair of numbers using polar coordinates, extracting the radius and angle,
 you could define:
 ```julia
 struct Polar end
-function Match.extract(::Type{Polar}, p::Tuple{<:Number,<:Number})
+function Match.extract(::Type{Polar}, ::Val{2}, p::Tuple{<:Number,<:Number})
     x, y = p
     return (sqrt(x^2 + y^2), atan(y, x))
 end
@@ -125,7 +125,7 @@ struct AddExpr
     right
     annos
 end
-function Match.extract(::Type{AddExpr}, e::AddExpr)
+function Match.extract(::Type{AddExpr}, ::Val{2}, e::AddExpr)
     return (e.left, e.right)
 end
 @match AddExpr(x, y) = node
