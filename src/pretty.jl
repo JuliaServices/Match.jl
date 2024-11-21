@@ -188,7 +188,9 @@ end
 function pretty(io::IO, p::BoundFetchExtractorPattern)
     print(io, "extract(")
     pretty(io, p.extractor)
-    print(io, ", ")
+    print(io, ", Val(")
+    pretty(io, p.arity)
+    print(io, "), ")
     pretty(io, p.input)
     print(io, ")")
 end

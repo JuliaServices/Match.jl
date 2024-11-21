@@ -90,7 +90,7 @@ function code(bound_pattern::BoundFetchExpressionPattern)
     code(bound_pattern.bound_expression)
 end
 function code(bound_pattern::BoundFetchExtractorPattern)
-    Expr(:call, Match.extract, bound_pattern.extractor, bound_pattern.input)
+    Expr(:call, Match.extract, bound_pattern.extractor, Val(bound_pattern.arity), bound_pattern.input)
 end
 
 # Return an expression that computes whether or not the pattern matches.

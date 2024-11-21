@@ -307,13 +307,14 @@ struct BoundFetchExtractorPattern <: BoundFetchPattern
     source::Any
     input::Symbol
     extractor::Type
+    arity::Int
     type::Type
 end
 function Base.hash(a::BoundFetchExtractorPattern, h::UInt64)
-    hash((a.input, a.extractor, 0xd7882f5b4888d335), h)
+    hash((a.input, a.extractor, a.arity, 0xd7882f5b4888d335), h)
 end
 function Base.:(==)(a::BoundFetchExtractorPattern, b::BoundFetchExtractorPattern)
-    a.input == b.input && a.extractor == b.extractor
+    a.input == b.input && a.extractor == b.extractor && a.arity == b.arity
 end
 
 # Preserve the value of the expression into a temp.  Used
