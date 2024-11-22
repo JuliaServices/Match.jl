@@ -92,8 +92,9 @@ Otherwise `2` is the result.
 ## Extractors
 
 Struct patterns of the form `T(x1,...,xn)` can be overridden by defining an _extractor_ function for `T`.
-When a value `v` is matched against a pattern `T(x1,...,xn)`, if `Match.extract(::Type{T}, ::Val{n}, _)` is defined for type `T` and arity `n`, `extract(T, Val(n), v)` is called and the result is then matched against the tuple pattern `(x1,...,xn)`.
-The value `v` being matched need not be of type `T`.
+When a value `v` is matched against a pattern `T(x1,...,xn)`, if `Match.extract(::Type{T}, ::Val{n}, _)`
+is defined for type `T` and arity `n`, `extract(T, Val(n), v)` is called and the result is then matched
+against the tuple pattern `(x1,...,xn)`. The value `v` being matched need not be of type `T`.
 If the result of the `extract` call is `nothing` or does not match `(x1,...,xn)`, then the match fails.
 If `extract` is not defined for `T`, the value `v` is checked against the struct type `T`, as usual,
 with its fields matched against the subpatterns `x1`, ..., `xn`.
