@@ -271,7 +271,7 @@ function bind_pattern!(
 
             if isabstracttype(bound_type)
                 if match_positionally
-                    error("$(location.file):$(location.line): The type `$bound_type` is an abstract type. No extractor with arity $(len) is defined.")
+                    error("$(location.file):$(location.line): The type `$bound_type` is an abstract type. Consider defining an extractor `Match.extract(::Type{$bound_type`, ::Val{$len}, _)`.")
                 else
                     error("$(location.file):$(location.line): The type `$bound_type` is an abstract type. Struct patterns can only be used with concrete types.")
                 end

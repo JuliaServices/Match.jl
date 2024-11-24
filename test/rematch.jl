@@ -82,6 +82,40 @@ file = Symbol(@__FILE__)
         end
     end
 
+    @testset "using abstract type for struct pattern" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Term(1,2) => nothing
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: The type `$Term` is an abstract type. Consider defining an extractor `Match.extract(::Type{Main.Rematch2Tests.Term`, ::Val{2}, _)`."
+            end
+        end
+    end
+
+    @testset "using abstract type for struct pattern with named parameter" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Term(x=1) => nothing
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: The type `$Term` is an abstract type. Struct patterns can only be used with concrete types."
+            end
+        end
+    end
+
     @testset "missing type or extractor" begin
         let line = 0
             try
@@ -490,6 +524,12 @@ end
     @test_throws LoadError (@eval @match Foo(1,2) begin
         Foo(x,y) => :ok
         Foo(x) => :nope
+    end)
+end
+
+@testset "abstract type" begin
+    @test_throws LoadError (@eval @match Foo(1,2) begin
+        Term(x,y) => :nope
     end)
 end
 
