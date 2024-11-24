@@ -47,7 +47,7 @@ for examples of this and other features.
 * `T(x,y,z)` matches structs of type `T` with fields matching patterns `x,y,z`
 * `T(y=p)` matches structs of type `T` whose `y` field matches pattern `p`
 * `(;x,y,z)` matches values with fields `x,y,z` binding to variables `x,y,z`
-* `(;x=p)` matches values with field `x` matching pattern `p`; also binds the field to `x`
+* `(;x=p)` matches values with field `x` matching pattern `p`; does not bind `x`.
 * `(;x::T)` matches values with field `x` matching pattern `::T`; also binds the field to `x`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
