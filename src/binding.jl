@@ -247,9 +247,6 @@ function bind_pattern!(
         # bind type at macro expansion time
         bound_type = bind_type(location, T, input, binder)
 
-        # First try the extractor, then try the struct type.
-        disjuncts = BoundPattern[]
-
         # Check if there is an extractor method for the pattern type.
         extractor_sig = (Type{bound_type}, Val{len}, Any,)
         is_extractor = !isempty(Base.methods(Match.extract, extractor_sig))
@@ -282,45 +279,45 @@ function bind_pattern!(
             if match_positionally && len != length(field_names)
                 error("$(location.file):$(location.line): The type `$bound_type` has " *
                         "$(length(field_names)) fields but the pattern expects $len fields.")
-            else
-                pattern0 = BoundTypeTestPattern(location, T, input, bound_type)
-                push!(conjuncts, pattern0)
+            end
 
-                for i in 1:len
-                    pat = subpatterns[i]
-                    if match_positionally
-                        field_name = field_names[i]
-                        pattern_source = pat
-                    else
-                        @assert pat.head == :kw
-                        field_name = pat.args[1]
-                        pattern_source = pat.args[2]
-                        if !(field_name in field_names)
-                            error("$(location.file):$(location.line): Type `$bound_type` has " *
-                                    "no field `$field_name`.")
-                        end
+            pattern0 = BoundTypeTestPattern(location, T, input, bound_type)
+            push!(conjuncts, pattern0)
+
+            for i in 1:len
+                pat = subpatterns[i]
+                if match_positionally
+                    field_name = field_names[i]
+                    pattern_source = pat
+                else
+                    @assert pat.head == :kw
+                    field_name = pat.args[1]
+                    pattern_source = pat.args[2]
+                    if !(field_name in field_names)
+                        error("$(location.file):$(location.line): Type `$bound_type` has " *
+                                "no field `$field_name`.")
                     end
-
-                    field_type = nothing
-                    if field_name == match_fieldnames(Symbol)[1]
-                        # special case Symbol's hypothetical name field.
-                        field_type = String
-                    else
-                        for (fname, ftype) in zip(Base.fieldnames(bound_type), Base.fieldtypes(bound_type))
-                            if fname == field_name
-                                field_type = ftype
-                                break
-                            end
-                        end
-                    end
-                    @assert field_type !== nothing
-
-                    fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
-                    field_temp = push_pattern!(conjuncts, binder, fetch)
-                    bound_subpattern, assigned = bind_pattern!(
-                        location, pattern_source, field_temp, binder, assigned)
-                    push!(conjuncts, bound_subpattern)
                 end
+
+                field_type = nothing
+                if field_name == match_fieldnames(Symbol)[1]
+                    # special case Symbol's hypothetical name field.
+                    field_type = String
+                else
+                    for (fname, ftype) in zip(Base.fieldnames(bound_type), Base.fieldtypes(bound_type))
+                        if fname == field_name
+                            field_type = ftype
+                            break
+                        end
+                    end
+                end
+                @assert field_type !== nothing
+
+                fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, field_type)
+                field_temp = push_pattern!(conjuncts, binder, fetch)
+                bound_subpattern, assigned = bind_pattern!(
+                    location, pattern_source, field_temp, binder, assigned)
+                push!(conjuncts, bound_subpattern)
             end
 
             pattern = BoundAndPattern(location, source, conjuncts)
