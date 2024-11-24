@@ -500,6 +500,12 @@ end
         (; x) => true
     end)
 
+    # Check deep matching.
+    @test (@match Foo(Foo(1,2),Foo(3,4)) begin
+      (; x=(; x=1, y=2), y=(; x=3, y=4)) => true
+      _ => false
+    end)
+
     # Check that field names are bound.
     @test (@match Foo(1,2) begin
         (; x, y) => (x, y)
@@ -519,7 +525,7 @@ end
     # Check that patterns after `=` bind.
     @test (@match Foo(1,2) begin
         (; x=z, y) => (y, z)
-    end) == (1,2,1)
+    end) == (2,1)
 
     # Check that we don't match if a field does not exist.
     @test (@match Foo(1,2) begin
