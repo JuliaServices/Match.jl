@@ -505,23 +505,21 @@ end
         (; x, y) => (x, y)
     end) == (1, 2)
 
-    # Check that field names are bound for `=` and `::` patterns too.
+    # Check that field names are bound for `::` patterns too.
     @test (@match Foo(1,2) begin
-        (; x=1, y::Int) => (x, y)
+        (; x::Int, y::Int) => (x, y)
     end) == (1,2)
 
-    # Check that patterns after `=` also bind.
-    @test (@match Foo(1,2) begin
-        (; x=z, y) => (x, y, z)
-    end) == (1,2,1)
+    # Check that field names are not bound for `=` patterns too.
+    err = (VERSION < v"1.11-") ? UndefVarError(:x) : UndefVarError(:x, @__MODULE__)
+    @test_throws err (@match Foo(1,2) begin
+        (; x=1, y) => (x, y)
+    end) == (1,2)
 
-    # Check that we don't match if a field does not exist.
+    # Check that patterns after `=` bind.
     @test (@match Foo(1,2) begin
-      (; x, y, z) => false # No field `z`.
-      (; x) => true
-      (; x, y) => false
-      _ => false
-    end)
+        (; x=z, y) => (y, z)
+    end) == (1,2,1)
 
     # Check that we don't match if a field does not exist.
     @test (@match Foo(1,2) begin
