@@ -251,11 +251,7 @@ function bind_pattern!(
         disjuncts = BoundPattern[]
 
         # Check if there is an extractor method for the pattern type.
-        if match_positionally
-            extractor_sig = (Type{bound_type}, Val{len}, Any,)
-        else
-            extractor_sig = (Type{bound_type}, (Val{x} for x in sort(named_fields))..., Any,)
-        end
+        extractor_sig = (Type{bound_type}, Val{len}, Any,)
         is_extractor = !isempty(Base.methods(Match.extract, extractor_sig))
 
         if is_extractor
@@ -272,6 +268,14 @@ function bind_pattern!(
         else
             # Use the field-by-field match.
             conjuncts = BoundPattern[]
+
+            if isabstracttype(bound_type)
+                if match_positionally
+                    error("$(location.file):$(location.line): The type `$bound_type` is an abstract type. No extractor with arity $(len) is defined.")
+                else
+                    error("$(location.file):$(location.line): The type `$bound_type` is an abstract type. Struct patterns can only be used with concrete types.")
+                end
+            end
 
             field_names::Tuple = match_fieldnames(bound_type)
 
