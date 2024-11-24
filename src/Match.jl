@@ -249,7 +249,6 @@ end
 
 """
     extract(T::Type, ::Val{n}, value)
-    extract(T::Type, ::Val{:x1}, ..., ::Val{:xn}, ..., value)
 
 Override matching for type `T`, destructuring `value` into its component fields.
 
