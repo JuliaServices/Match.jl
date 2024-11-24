@@ -280,7 +280,6 @@ function bind_pattern!(
             field_names::Tuple = match_fieldnames(bound_type)
 
             if match_positionally && len != length(field_names)
-                # If the extractor is defined, silently fail if the field-by-field match fails.
                 error("$(location.file):$(location.line): The type `$bound_type` has " *
                         "$(length(field_names)) fields but the pattern expects $len fields.")
             else
