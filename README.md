@@ -48,7 +48,7 @@ for examples of this and other features.
 * `T(y=1)` matches structs of type `T` whose `y` field equals `1`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
-* `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
+* `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries
 * `(x,y...,z)` matches `Tuple`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
 * `::T` matches any subtype (`isa`) of type `T`
 * `x::T` matches any subtype (`isa`) of T that also matches pattern `x`
