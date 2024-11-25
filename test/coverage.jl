@@ -400,6 +400,18 @@ end # of automaton
         end
     end
 
+    @testset "exercise dumpall 3" begin
+        devnull = IOBuffer()
+        Match.@match_dumpall devnull some_value begin
+            Diff(_) => 1
+            _ => 2
+        end
+        Match.@match_dump devnull some_value begin
+            Diff(_) => 1
+            _ => 2
+        end
+    end
+
     @testset "trigger some normally unreachable code 1" begin
         @test_throws ErrorException Match.gentemp(:a)
 

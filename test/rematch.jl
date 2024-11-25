@@ -82,6 +82,59 @@ file = Symbol(@__FILE__)
         end
     end
 
+    @testset "using abstract type for struct pattern" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Term(1,2) => nothing
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: The type `$Term` is an abstract type. Consider defining an extractor `Match.extract(::Type{Main.Rematch2Tests.Term`, ::Val{2}, _)`."
+            end
+        end
+    end
+
+    @testset "using abstract type for struct pattern with named parameter" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Term(x=1) => nothing
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: The type `$Term` is an abstract type. Struct patterns can only be used with concrete types."
+            end
+        end
+    end
+
+    @testset "missing type or extractor" begin
+        let line = 0
+            try
+                line = (@__LINE__) + 2
+                @eval @match Foo(1, 2) begin
+                    Unknown(x, y) => (x, y)
+                    _ => false
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                err = (VERSION < v"1.11-") ? UndefVarError(:Unknown) : UndefVarError(:Unknown, @__MODULE__)
+                @test e.msg == "$file:$line: Could not bind `Unknown` as a type (due to `$err`)."
+            end
+        end
+    end
+
     @testset "location of error for redundant field patterns 1" begin
         let line = 0
             try
@@ -471,6 +524,59 @@ end
     @test_throws LoadError (@eval @match Foo(1,2) begin
         Foo(x,y) => :ok
         Foo(x) => :nope
+    end)
+end
+
+@testset "abstract type" begin
+    @test_throws LoadError (@eval @match Foo(1,2) begin
+        Term(x,y) => :nope
+    end)
+end
+
+@testset "extractor function" begin
+    @test (@eval @match Foo(1,1) begin
+        Polar(r,θ) => r == sqrt(2) && θ == π / 4
+        _ => false
+    end)
+end
+
+@testset "extractor function that might fail" begin
+    @test (@eval @match Foo(1,1) begin
+        Diff(2) => false
+        Diff(1) => false
+        Diff(0) => true
+        _ => false
+    end)
+    @test (@eval @match Foo(2,1) begin
+        Diff(2) => false
+        Diff(1) => true
+        _ => false
+    end)
+    @test (@eval @match Foo(1,2) begin
+        Diff(2) => false
+        Diff(1) => false
+        _ => true
+    end)
+end
+
+@testset "nested extractor function" begin
+    @test (@eval @match Foo(Foo(1,2),3) begin
+        Foo0(Foo0(1,2),3) => true
+        _ => false
+    end)
+end
+
+@testset "extract to override type match" begin
+    @test (@eval @match Foo2(Foo2(1,2),3) begin
+        Foo2(3,Foo2(2,1)) => true
+        _ => false
+    end)
+end
+
+@testset "extract to override type match 2" begin
+    @test (@eval @match Foo3(Foo3(1,2),3) begin
+        Foo3(Foo3(1)) => true
+        _ => false
     end)
 end
 
