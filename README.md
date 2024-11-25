@@ -51,7 +51,7 @@ for examples of this and other features.
 * `(;x::T)` matches values with field `x` matching pattern `::T`; also binds the field to `x`
 * `[x,y,z]` matches `AbstractArray`s with 3 entries matching `x,y,z`
 * `(x,y,z)` matches `Tuple`s with 3 entries matching `x,y,z`
-* `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
+* `[x,y...,z]` matches `AbstractArray`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries
 * `(x,y...,z)` matches `Tuple`s with at least 2 entries, where `x` matches the first entry, `z` matches the last entry and `y` matches the remaining entries.
 * `::T` matches any subtype (`isa`) of type `T`
 * `x::T` matches any subtype (`isa`) of T that also matches pattern `x`
@@ -93,6 +93,53 @@ In this example, the result value when matching `pattern1` is a block that has t
 When `pattern1` matches but `some_failure_condition` is `true`, then the whole case is treated as not matching and the following cases are tried.
 Otherwise, if `some_shortcut_condition` is `true`, then `1` is the result value for this case.
 Otherwise `2` is the result.
+
+## Extractors
+
+Struct patterns of the form `T(x1,...,xn)` can be overridden by defining an _extractor_ function for `T`.
+When a value `v` is matched against a pattern `T(x1,...,xn)`, if `Match.extract(::Type{T}, ::Val{n}, _)`
+is defined for type `T` and arity `n`, `extract(T, Val(n), v)` is called and the result is then matched
+against the tuple pattern `(x1,...,xn)`. The value `v` being matched need not be of type `T`.
+If the result of the `extract` call is `nothing` or does not match `(x1,...,xn)`, then the match fails.
+If `extract` is not defined for `T`, the value `v` is checked against the struct type `T`, as usual,
+with its fields matched against the subpatterns `x1`, ..., `xn`.
+
+For example, to match a pair of numbers using polar coordinates, extracting the radius and angle,
+you could define:
+```julia
+struct Polar end
+function Match.extract(::Type{Polar}, ::Val{2}, p::Tuple{<:Number,<:Number})
+    x, y = p
+    return (sqrt(x^2 + y^2), atan(y, x))
+end
+```
+This definition allows you to use a new `Polar` pattern:
+```julia
+@match (1,1) begin
+    Polar(r,θ) => @assert r == sqrt(2) && θ == π / 4
+end
+```
+
+The `extract` function should return either a tuple of values to be matched by the subpatterns
+or return `nothing`. Named parameters are not supported.
+
+Extractors can also be used to ignore or transform fields of existing types during matching.
+For example, this extractor ignores the `annos` field of the `AddExpr` type:
+```julia
+struct AddExpr
+    left
+    right
+    annos
+end
+function Match.extract(::Type{AddExpr}, ::Val{2}, e::AddExpr)
+    return (e.left, e.right)
+end
+@match AddExpr(x, y) = node
+```
+
+Extractors allow you to abstract from the concrete implementation of the struct type. For example, they
+can be used to implement more user-friendly pattern matching for types defined with `SumTypes.jl` or
+other packages.
 
 ## Differences from previous versions of `Match.jl`
 
