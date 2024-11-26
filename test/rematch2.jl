@@ -507,6 +507,20 @@ end
         end
     end
 
+    if VERSION >= v"1.8"
+        @testset "warn for unreachable cases with named tuples" begin
+            let line = (@__LINE__) + 5
+                @test_warn(
+                    "$file:$line: Case 2: `(; x, y) =>` is not reachable.",
+                    @eval @match Foo(1, 2) begin
+                        (; x) => 1
+                        (; x, y) => 2
+                    end
+                    )
+            end
+        end
+    end
+
     @testset "assignment to pattern variables are permitted but act locally" begin
         @test (@match 1 begin
             x where begin
