@@ -544,6 +544,32 @@ end # of automaton
         end
     end
 
+    @testset "Ensure named tuples work if there is a local typeof" begin
+        @eval module M1
+            import Match
+            import ..Foo
+            # Do not overload Base.typeof
+            typeof(x) = Int
+            f() = Match.@match Foo(1,2) begin
+                (; x, y) => x+y
+            end
+        end
+        @eval M1.f() == 3
+    end
+
+    @testset "Ensure named tuples work if there is a local hasfield" begin
+        @eval module M2
+            import Match
+            import ..Foo
+            # Do not overload Base.hasfield
+            hasfield(x, y) = false
+            f() = Match.@match Foo(1,2) begin
+                (; x, y) => x+y
+            end
+        end
+        @eval M2.f() == 3
+    end
+
     @testset "Abstract types" begin
         x = 2
         @test (@__match__ x begin

@@ -399,9 +399,8 @@ function bind_pattern!(
             # We'd like to just test that input isa @NamedTuple($(field_names)...)
             # But, NamedTuples are not covariant, so that test would fail if the tuple element is
             # not inferred as exactly Any.
-            pattern = shred_where_clause(
-                Expr(:call, :hasfield, Expr(:call, :typeof, input), QuoteNode(field_name)),
-                false, location, binder, assigned)
+            guard = Expr(:call, :(Base.hasfield), Expr(:call, :(Base.typeof), input), QuoteNode(field_name))
+            pattern = bind_where_clause(guard, false, location, binder, assigned)
             push!(conjuncts, pattern)
 
             # Bind the field pattern.
@@ -594,12 +593,29 @@ function shred_where_clause(
         result_type = (inverted == (guard.head == :&&)) ? BoundOrPattern : BoundAndPattern
         return result_type(location, guard, BoundPattern[left, right])
     else
-        bound_expression = bind_expression(location, guard, assigned)
-        fetch = BoundFetchExpressionPattern(bound_expression, nothing, Any)
-        temp = get_temp(binder, fetch)
-        test = BoundWhereTestPattern(location, guard, temp, inverted)
-        return BoundAndPattern(location, guard, BoundPattern[fetch, test])
+        return bind_where_clause(guard, inverted, location, binder, assigned)
     end
+end
+
+#
+# Compile a shredded where clause.
+#
+function bind_where_clause(
+    guard::Any,
+    inverted::Bool,
+    location::LineNumberNode,
+    binder::BinderContext,
+    assigned::ImmutableDict{Symbol, Symbol})::BoundPattern
+
+    @assert !@capture(guard, !g_)
+    @assert !@capture(guard, g1_ && g2_)
+    @assert !@capture(guard, g1_ || g2_)
+
+    bound_expression = bind_expression(location, guard, assigned)
+    fetch = BoundFetchExpressionPattern(bound_expression, nothing, Any)
+    temp = get_temp(binder, fetch)
+    test = BoundWhereTestPattern(location, guard, temp, inverted)
+    return BoundAndPattern(location, guard, BoundPattern[fetch, test])
 end
 
 #
