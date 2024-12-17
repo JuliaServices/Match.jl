@@ -387,13 +387,13 @@ function bind_pattern!(
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
 
     elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
-        # named tuples (; x=p, y=q; z)
+        # named tuples (; x=p, y=q, z)
         params = source.args[1]
 
         conjuncts = BoundPattern[]
 
         for param in params.args
-            field_name, pattern_source = parse_kw_param(param, source)
+            field_name, pattern_source = parse_kw_param(location, param, source)
 
             # Check that the field exists.
             # We'd like to just test that input isa @NamedTuple($(field_names)...)
@@ -510,7 +510,7 @@ function push_pattern!(patterns::Vector{BoundPattern}, binder::BinderContext, pa
     get_temp(binder, pat)
 end
 
-function parse_kw_param(param, source)
+function parse_kw_param(location, param, source)
     if is_expr(param, :kw, 2)
         # (; x = p)
         field_name = param.args[1]
