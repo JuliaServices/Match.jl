@@ -387,7 +387,7 @@ function bind_pattern!(
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
 
     elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
-        # named tuples (; x=p, y=q; z)
+        # named tuples (; x=p, y=q, z)
         params = source.args[1]
 
         conjuncts = BoundPattern[]
