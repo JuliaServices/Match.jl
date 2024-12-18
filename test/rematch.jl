@@ -580,6 +580,67 @@ end
     end)
 end
 
+# match against named tuples
+@testset "Named tuples" begin
+    @test (@match (; x=1, y=2) begin
+        (; x=1, y=2) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x=1, y=2) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; y=2, x=1) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x=1) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x::Int) => true
+    end)
+
+    @test (@match Foo(1,2) begin
+        (; x) => true
+    end)
+
+    # Check deep matching.
+    @test (@match Foo(Foo(1,2),Foo(3,4)) begin
+      (; x=(; x=1, y=2), y=(; x=3, y=4)) => true
+      _ => false
+    end)
+
+    # Check that field names are bound.
+    @test (@match Foo(1,2) begin
+        (; x, y) => (x, y)
+    end) == (1, 2)
+
+    # Check that field names are bound for `::` patterns too.
+    @test (@match Foo(1,2) begin
+        (; x::Int, y::Int) => (x, y)
+    end) == (1,2)
+
+    # Check that field names are not bound for `=` patterns too.
+    err = (VERSION < v"1.11-") ? UndefVarError(:x) : UndefVarError(:x, @__MODULE__)
+    @test_throws err (@match Foo(1,2) begin
+        (; x=1, y) => (x, y)
+    end) == (1,2)
+
+    # Check that patterns after `=` bind.
+    @test (@match Foo(1,2) begin
+        (; x=z, y) => (y, z)
+    end) == (2,1)
+
+    # Check that we don't match if a field does not exist.
+    @test (@match Foo(1,2) begin
+      (; x, y, z) => false # No field `z`.
+      (; x) => true
+      _ => false
+    end)
+end
+
 @testset "Miscellanea" begin
     # match against fiddly symbols (https://github.com/JuliaServices/Match.jl/issues/32)
     @test (@match :(@when a < b) begin

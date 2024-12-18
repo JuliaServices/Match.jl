@@ -386,6 +386,33 @@ function bind_pattern!(
         # disjunction: `(a | b)` where `a` and `b` are patterns.
         return bind_pattern!(location, Expr(:(||), source.args[2], source.args[3]), input, binder, assigned)
 
+    elseif is_expr(source, :tuple, 1) && is_expr(source.args[1], :parameters)
+        # named tuples (; x=p, y=q, z)
+        params = source.args[1]
+
+        conjuncts = BoundPattern[]
+
+        for param in params.args
+            field_name, pattern_source = parse_kw_param(location, param, source)
+
+            # Check that the field exists.
+            # We'd like to just test that input isa @NamedTuple($(field_names)...)
+            # But, NamedTuples are not covariant, so that test would fail if the tuple element is
+            # not inferred as exactly Any.
+            guard = Expr(:call, :(Base.hasfield), Expr(:call, :(Base.typeof), input), QuoteNode(field_name))
+            pattern = bind_where_clause(guard, false, location, binder, assigned)
+            push!(conjuncts, pattern)
+
+            # Bind the field pattern.
+            fetch = BoundFetchFieldPattern(location, pattern_source, input, field_name, Any)
+            field_temp = push_pattern!(conjuncts, binder, fetch)
+            bound_subpattern, assigned = bind_pattern!(
+                location, pattern_source, field_temp, binder, assigned)
+            push!(conjuncts, bound_subpattern)
+        end
+
+        pattern = BoundAndPattern(location, source, conjuncts)
+
     elseif is_expr(source, :tuple) || is_expr(source, :vect)
         # array or tuple
         subpatterns = source.args
@@ -482,6 +509,28 @@ function push_pattern!(patterns::Vector{BoundPattern}, binder::BinderContext, pa
     get_temp(binder, pat)
 end
 
+function parse_kw_param(location, param, source)
+    if is_expr(param, :kw, 2)
+        # (; x = p)
+        field_name = param.args[1]
+        # bind both the pattern p, but not the field name.
+        pattern_source = param.args[2]
+    elseif is_expr(param, :(::), 2) && param.args[1] isa Symbol
+        # (; x::T) -- equivalent to (; x=(x::T))
+        field_name = param.args[1]
+        # bind both the field name and pattern `::T`
+        pattern_source = param
+    elseif param isa Symbol
+        # (; x) -- equivalent to (; x=x)
+        field_name = param
+        pattern_source = param
+    else
+        error("$(location.file):$(location.line): Unexpected named parameter " *
+            "`$param` in named tuple pattern `$source`.")
+    end
+    return (field_name, pattern_source)
+end
+
 function split_where(T, location)
     type = T
     where_clause = nothing
@@ -544,12 +593,29 @@ function shred_where_clause(
         result_type = (inverted == (guard.head == :&&)) ? BoundOrPattern : BoundAndPattern
         return result_type(location, guard, BoundPattern[left, right])
     else
-        bound_expression = bind_expression(location, guard, assigned)
-        fetch = BoundFetchExpressionPattern(bound_expression, nothing, Any)
-        temp = get_temp(binder, fetch)
-        test = BoundWhereTestPattern(location, guard, temp, inverted)
-        return BoundAndPattern(location, guard, BoundPattern[fetch, test])
+        return bind_where_clause(guard, inverted, location, binder, assigned)
     end
+end
+
+#
+# Compile a shredded where clause.
+#
+function bind_where_clause(
+    guard::Any,
+    inverted::Bool,
+    location::LineNumberNode,
+    binder::BinderContext,
+    assigned::ImmutableDict{Symbol, Symbol})::BoundPattern
+
+    @assert !@capture(guard, !g_)
+    @assert !@capture(guard, g1_ && g2_)
+    @assert !@capture(guard, g1_ || g2_)
+
+    bound_expression = bind_expression(location, guard, assigned)
+    fetch = BoundFetchExpressionPattern(bound_expression, nothing, Any)
+    temp = get_temp(binder, fetch)
+    test = BoundWhereTestPattern(location, guard, temp, inverted)
+    return BoundAndPattern(location, guard, BoundPattern[fetch, test])
 end
 
 #

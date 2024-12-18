@@ -527,6 +527,49 @@ end # of automaton
         @test_throws ErrorException Match.make_next(node, pattern, binder)
     end
 
+    @testset "Malformed named tuples" begin
+        let line = 0, file = @__FILE__
+            try
+                line = (@__LINE__) + 2
+                @eval @match x begin
+                    (; 1, 2, 3, x, y, z) => x
+                end
+                @test false
+            catch ex
+                @test ex isa LoadError
+                e = ex.error
+                @test e isa ErrorException
+                @test e.msg == "$file:$line: Unexpected named parameter `1` in named tuple pattern `(; 1, 2, 3, x, y, z)`."
+            end
+        end
+    end
+
+    @testset "Ensure named tuples work if there is a local typeof" begin
+        @eval module M1
+            import Match
+            import ..Foo
+            # Do not overload Base.typeof
+            typeof(x) = Int
+            f() = Match.@match Foo(1,2) begin
+                (; x, y) => x+y
+            end
+        end
+        @eval M1.f() == 3
+    end
+
+    @testset "Ensure named tuples work if there is a local hasfield" begin
+        @eval module M2
+            import Match
+            import ..Foo
+            # Do not overload Base.hasfield
+            hasfield(x, y) = false
+            f() = Match.@match Foo(1,2) begin
+                (; x, y) => x+y
+            end
+        end
+        @eval M2.f() == 3
+    end
+
     @testset "Abstract types" begin
         x = 2
         @test (@__match__ x begin
