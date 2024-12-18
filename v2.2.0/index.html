@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Match.jl</title><meta name="title" content="Home · Match.jl"/><meta property="og:title" content="Home · Match.jl"/><meta property="twitter:title" content="Home · Match.jl"/><meta name="description" content="Documentation for Match.jl."/><meta property="og:description" content="Documentation for Match.jl."/><meta property="twitter:description" content="Documentation for Match.jl."/><meta property="og:url" content="https://JuliaServices.github.io/Match.jl/"/><meta property="twitter:url" content="https://JuliaServices.github.io/Match.jl/"/><link rel="canonical" href="https://JuliaServices.github.io/Match.jl/"/><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>Match.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li class="toplevel"><a class="tocitem" href="#Usage"><span>Usage</span></a></li><li><a class="tocitem" href="#Simple-pattern-@ismatch-macro"><span>Simple-pattern <code>@ismatch</code> macro</span></a></li><li><a class="tocitem" href="#Multi-case-@match-macro"><span>Multi-case <code>@match</code> macro</span></a></li><li><a class="tocitem" href="#Deep-Matching-Against-Arrays"><span>Deep Matching Against Arrays</span></a></li><li><a class="tocitem" href="#single-case-@match-macro"><span>single-case <code>@match</code> macro</span></a></li><li><a class="tocitem" href="#ismatch-macro"><span><code>ismatch</code> macro</span></a></li><li class="toplevel"><a class="tocitem" href="#Examples"><span>Examples</span></a></li><li><a class="tocitem" href="#Mathematica-Inspired-Sparse-Array-Constructor"><span>Mathematica-Inspired Sparse Array Constructor</span></a></li><li><a class="tocitem" href="#Matching-Exprs"><span>Matching Exprs</span></a></li><li class="toplevel"><a class="tocitem" href="#Inspiration"><span>Inspiration</span></a></li><li class="toplevel"><a class="tocitem" href="#API-Documentation"><span>API Documentation</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaServices/Match.jl/blob/main/docs/src/index.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="[Match.jl](https://github.com/JuliaServices/Match.jl)-–-Advanced-Pattern-Matching-for-Julia"><a class="docs-heading-anchor" href="#[Match.jl](https://github.com/JuliaServices/Match.jl)-–-Advanced-Pattern-Matching-for-Julia"><a href="https://github.com/JuliaServices/Match.jl">Match.jl</a> –- Advanced Pattern Matching for Julia</a><a id="[Match.jl](https://github.com/JuliaServices/Match.jl)-–-Advanced-Pattern-Matching-for-Julia-1"></a><a class="docs-heading-anchor-permalink" href="#[Match.jl](https://github.com/JuliaServices/Match.jl)-–-Advanced-Pattern-Matching-for-Julia" title="Permalink"></a></h1><p>This package provides both simple and advanced pattern matching capabilities for Julia. Features include:</p><ul><li>Matching against almost any data type with a first-match policy</li><li>Deep matching within data types, tuples, and vectors</li><li>Variable binding within matches</li><li>Efficient code generation via a decision automaton.</li></ul><h1 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h1><p>Use the Julia package manager. Within Julia, do:</p><pre><code class="language-julia hljs">Pkg.add(&quot;Match&quot;)</code></pre><h1 id="Usage"><a class="docs-heading-anchor" href="#Usage">Usage</a><a id="Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Usage" title="Permalink"></a></h1><h2 id="Simple-pattern-@ismatch-macro"><a class="docs-heading-anchor" href="#Simple-pattern-@ismatch-macro">Simple-pattern <code>@ismatch</code> macro</a><a id="Simple-pattern-@ismatch-macro-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-pattern-@ismatch-macro" title="Permalink"></a></h2><p>The <code>@ismatch</code> macro tests if a value patches a given pattern, returning either <code>true</code> if it matches, or <code>false</code> if it does not.  When the pattern matches, the variables named in the pattern are bound and can be used.</p><pre><code class="language-julia-repl hljs">julia&gt; using Match
+
+julia&gt; @ismatch (1, 2) (x, y)
+true
+
+julia&gt; x
+1
+
+julia&gt; y
+2</code></pre><h2 id="Multi-case-@match-macro"><a class="docs-heading-anchor" href="#Multi-case-@match-macro">Multi-case <code>@match</code> macro</a><a id="Multi-case-@match-macro-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-case-@match-macro" title="Permalink"></a></h2><p>The <code>@match</code> macro acts as a pattern-matching switch statement, in which each case has a pattern and a result for when that pattern matches. The first case that matches is the one that computes the result for the <code>@match</code>.</p><pre><code class="language-julia hljs">using Match
+@match item begin
+    pattern1              =&gt; result1
+    pattern2 where cond   =&gt; result2
+    pattern3 || pattern4  =&gt; result3
+    _                     =&gt; default_result
+end</code></pre><p>Patterns can be values, regular expressions, type checks or constructors, tuples, or arrays. It is possible to supply variables inside a pattern, which will be bound to corresponding values. This and other features are best seen with examples.</p><h3 id="Match-Values"><a class="docs-heading-anchor" href="#Match-Values">Match Values</a><a id="Match-Values-1"></a><a class="docs-heading-anchor-permalink" href="#Match-Values" title="Permalink"></a></h3><p>The easiest kind of matching to use is simply to match against values:</p><pre><code class="language-julia hljs">@match item begin
+   1 =&gt; &quot;one&quot;
+   2 =&gt; &quot;two&quot;
+   _ =&gt; &quot;Something else...&quot;
+end</code></pre><p>Values can be computed expressions by using interpolation.  That is how to use <code>@match</code> with <code>@enum</code>s:</p><pre><code class="language-julia hljs">@enum Color Red Blue Greed
+@match item begin
+   $Red =&gt; &quot;Red&quot;
+   $Blue =&gt; &quot;Blue&quot;
+   $Greed =&gt; &quot;Greed is the color of money&quot;
+   _ =&gt; &quot;Something else...&quot;
+end</code></pre><h3 id="Match-Types"><a class="docs-heading-anchor" href="#Match-Types">Match Types</a><a id="Match-Types-1"></a><a class="docs-heading-anchor-permalink" href="#Match-Types" title="Permalink"></a></h3><p>Julia already does a great job of this with functions and multiple dispatch, and it is generally be better to use those mechanisms when possible. But it can be done here:</p><pre><code class="language-julia hljs">julia&gt; matchtype(item) = @match item begin
+           ::Int               =&gt; println(&quot;Integers are awesome!&quot;)
+           ::String            =&gt; println(&quot;Strings are the best&quot;)
+           ::Dict{Int, String} =&gt; println(&quot;Ints for Strings?&quot;)
+           ::Dict              =&gt; println(&quot;A Dict! Looking up a word?&quot;)
+           _                   =&gt; println(&quot;Something unexpected&quot;)
+   end
+
+julia&gt; matchtype(66)
+Integers are awesome!
+
+julia&gt; matchtype(&quot;abc&quot;)
+Strings are the best
+
+julia&gt; matchtype(Dict{Int, String}(1=&gt;&quot;a&quot;,2=&gt;&quot;b&quot;))
+Ints for Strings?
+
+julia&gt; matchtype(Dict())
+A Dict! Looking up a word?
+
+julia&gt; matchtype(2.0)
+Something unexpected</code></pre><h3 id="Deep-Matching-of-Composite-Types"><a class="docs-heading-anchor" href="#Deep-Matching-of-Composite-Types">Deep Matching of Composite Types</a><a id="Deep-Matching-of-Composite-Types-1"></a><a class="docs-heading-anchor-permalink" href="#Deep-Matching-of-Composite-Types" title="Permalink"></a></h3><p>One nice feature is the ability to match embedded types, as well as bind variables to components of those types:</p><pre><code class="language-julia hljs">struct Address
+    street::String
+    city::String
+    zip::String
+end
+
+struct Person
+    firstname::String
+    lastname::String
+    address::Address
+end
+
+personinfo(person) = @match person begin
+  Person(&quot;Julia&quot;, lname,  _)           =&gt; &quot;Found Julia $lname&quot;
+  Person(fname, &quot;Julia&quot;, _)            =&gt; &quot;$fname Julia was here!&quot;
+  Person(fname, lname,
+         Address(_, &quot;Cambridge&quot;, zip)) =&gt; &quot;$fname $lname lives in zip $zip&quot;
+  Person(_...)                         =&gt; &quot;Unknown person!&quot;
+end
+
+julia&gt; personinfo(Person(&quot;Julia&quot;, &quot;Robinson&quot;,
+                  Address(&quot;450 Serra Mall&quot;, &quot;Stanford&quot;, &quot;94305&quot;)))
+&quot;Found Julia Robinson&quot;
+
+julia&gt; personinfo(Person(&quot;Gaston&quot;, &quot;Julia&quot;,
+                  Address(&quot;1 rue Victor Cousin&quot;, &quot;Paris&quot;, &quot;75005&quot;)))
+&quot;Gaston Julia was here!&quot;
+
+julia&gt; personinfo(Person(&quot;Edwin&quot;, &quot;Aldrin&quot;,
+                  Address(&quot;350 Memorial Dr&quot;, &quot;Cambridge&quot;, &quot;02139&quot;)))
+&quot;Edwin Aldrin lives in zip 02139&quot;
+
+julia&gt; personinfo(Person(&quot;Linus&quot;, &quot;Pauling&quot;,
+                  Address(&quot;1200 E California Blvd&quot;, &quot;Pasadena&quot;, &quot;91125&quot;)))
+&quot;Unknown person!&quot;</code></pre><h3 id="Alternatives-and-Guards"><a class="docs-heading-anchor" href="#Alternatives-and-Guards">Alternatives and Guards</a><a id="Alternatives-and-Guards-1"></a><a class="docs-heading-anchor-permalink" href="#Alternatives-and-Guards" title="Permalink"></a></h3><p>Alternatives allow a match against multiple patterns.</p><p>Guards allow a conditional match. They are not a standard part of Julia yet, so to get the parser to accept them requires that they are preceded by a comma and end with &quot;end&quot;:</p><pre><code class="language-julia hljs">function parse_arg(arg::String, value::Any=nothing)
+    @match (arg, value) begin
+        (&quot;-l&quot;,              lang)    =&gt; println(&quot;Language set to $lang&quot;)
+        (&quot;-o&quot; || &quot;--optim&quot;, n::Int),
+        if 0 &lt; n &lt;= 5 end            =&gt; println(&quot;Optimization level set to $n&quot;)
+        (&quot;-o&quot; || &quot;--optim&quot;, n::Int)  =&gt; println(&quot;Illegal optimization level $(n)!&quot;)
+        (&quot;-h&quot; || &quot;--help&quot;,  nothing) =&gt; println(&quot;Help!&quot;)
+        bad                          =&gt; println(&quot;Unknown argument: $bad&quot;)
+    end
+end
+
+julia&gt; parse_arg(&quot;-l&quot;, &quot;eng&quot;)
+Language set to eng
+
+julia&gt; parse_arg(&quot;-l&quot;)
+Unknown argument: (&quot;-l&quot;,nothing)
+
+julia&gt; parse_arg(&quot;-o&quot;, 4)
+Optimization level set to 4
+
+julia&gt; parse_arg(&quot;--optim&quot;, 5)
+Optimization level set to 5
+
+julia&gt; parse_arg(&quot;-o&quot;, 0)
+Illegal optimization level 0!
+
+julia&gt; parse_arg(&quot;-o&quot;, 1.0)
+Unknown argument: (&quot;-o&quot;,1.0)
+
+julia&gt; parse_arg(&quot;-h&quot;)
+Help!
+
+julia&gt; parse_arg(&quot;--help&quot;)
+Help!</code></pre><p>The alternative guard syntax <code>pattern where expression</code> can sometimes be easier to use.</p><pre><code class="language-julia hljs">function parse_arg(arg::String, value::Any=nothing)
+    @match (arg, value) begin
+        (&quot;-l&quot;,              lang)    =&gt; println(&quot;Language set to $lang&quot;)
+        (&quot;-o&quot; || &quot;--optim&quot;, n::Int) where 0 &lt; n &lt;= 5 =&gt;
+                                        println(&quot;Optimization level set to $n&quot;)
+        (&quot;-o&quot; || &quot;--optim&quot;, n::Int)  =&gt; println(&quot;Illegal optimization level $(n)!&quot;)
+        (&quot;-h&quot; || &quot;--help&quot;,  nothing) =&gt; println(&quot;Help!&quot;)
+        bad                          =&gt; println(&quot;Unknown argument: $bad&quot;)
+    end
+end</code></pre><h3 id="Match-Ranges"><a class="docs-heading-anchor" href="#Match-Ranges">Match Ranges</a><a id="Match-Ranges-1"></a><a class="docs-heading-anchor-permalink" href="#Match-Ranges" title="Permalink"></a></h3><p>Borrowing a nice idea from pattern matching in Rust, pattern matching against ranges is also supported:</p><pre><code class="language-julia hljs">julia&gt; function num_match(n)
+           @match n begin
+               0      =&gt; &quot;zero&quot;
+               1 || 2 =&gt; &quot;one or two&quot;
+               3:10   =&gt; &quot;three to ten&quot;
+               _      =&gt; &quot;something else&quot;
+           end
+       end
+num_match (generic function with 1 method)
+
+julia&gt; num_match(0)
+&quot;zero&quot;
+
+julia&gt; num_match(2)
+&quot;one or two&quot;
+
+julia&gt; num_match(12)
+&quot;something else&quot;
+
+julia&gt; num_match(&#39;c&#39;)
+&quot;something else&quot;</code></pre><p>Note that a range can still match another range exactly:</p><pre><code class="language-julia hljs">julia&gt; num_match(3:10)
+&quot;three to ten&quot;</code></pre><h3 id="Regular-Expressions"><a class="docs-heading-anchor" href="#Regular-Expressions">Regular Expressions</a><a id="Regular-Expressions-1"></a><a class="docs-heading-anchor-permalink" href="#Regular-Expressions" title="Permalink"></a></h3><p>A regular expression can be used as a pattern, and will match any string that satisfies the pattern.</p><p>Match.jl used to have complex regular expression handling, permitting the capturing of matched subpatterns. We are considering adding that back again.</p><h2 id="Deep-Matching-Against-Arrays"><a class="docs-heading-anchor" href="#Deep-Matching-Against-Arrays">Deep Matching Against Arrays</a><a id="Deep-Matching-Against-Arrays-1"></a><a class="docs-heading-anchor-permalink" href="#Deep-Matching-Against-Arrays" title="Permalink"></a></h2><p>Arrays are intrinsic components of Julia. Match allows deep matching against single-dimensional vectors.</p><p>Match previously supported multidimensional arrays.  If there is sufficient demand, we&#39;ll add support for that again.</p><p>The following examples also demonstrate how Match can be used strictly for its extraction/binding capabilities, by only matching against one pattern.</p><h3 id="Extract-first-element,-rest-of-vector"><a class="docs-heading-anchor" href="#Extract-first-element,-rest-of-vector">Extract first element, rest of vector</a><a id="Extract-first-element,-rest-of-vector-1"></a><a class="docs-heading-anchor-permalink" href="#Extract-first-element,-rest-of-vector" title="Permalink"></a></h3><pre><code class="language-julia hljs">julia&gt; @ismatch 1:4 [a,b...]
+true
+
+julia&gt; a
+1
+
+julia&gt; b
+2:4</code></pre><h3 id="Match-values-at-the-beginning-of-a-vector"><a class="docs-heading-anchor" href="#Match-values-at-the-beginning-of-a-vector">Match values at the beginning of a vector</a><a id="Match-values-at-the-beginning-of-a-vector-1"></a><a class="docs-heading-anchor-permalink" href="#Match-values-at-the-beginning-of-a-vector" title="Permalink"></a></h3><pre><code class="language-julia hljs">julia&gt; @ismatch 1:5 [1,2,a...]
+true
+
+julia&gt; a
+3:5</code></pre><h3 id="Notes/Gotchas"><a class="docs-heading-anchor" href="#Notes/Gotchas">Notes/Gotchas</a><a id="Notes/Gotchas-1"></a><a class="docs-heading-anchor-permalink" href="#Notes/Gotchas" title="Permalink"></a></h3><p>There are a few useful things to be aware of when using Match.</p><ul><li><code>if</code> guards need a comma and an `end`:</li></ul><h4 id="Bad"><a class="docs-heading-anchor" href="#Bad">Bad</a><a id="Bad-1"></a><a class="docs-heading-anchor-permalink" href="#Bad" title="Permalink"></a></h4><pre><code class="nohighlight hljs">julia&gt; _iseven(a) = @match a begin
+        n::Int if n%2 == 0 end =&gt; println(&quot;$n is even&quot;)
+        m::Int                 =&gt; println(&quot;$m is odd&quot;)
+    end
+ERROR: syntax: extra token &quot;if&quot; after end of expression
+
+julia&gt; _iseven(a) = @match a begin
+        n::Int, if n%2 == 0 =&gt; println(&quot;$n is even&quot;)
+        m::Int              =&gt; println(&quot;$m is odd&quot;)
+    end
+ERROR: syntax: invalid identifier name =&gt;</code></pre><h4 id="Good"><a class="docs-heading-anchor" href="#Good">Good</a><a id="Good-1"></a><a class="docs-heading-anchor-permalink" href="#Good" title="Permalink"></a></h4><pre><code class="nohighlight hljs">julia&gt; _iseven(a) = @match a begin
+        n::Int, if n%2 == 0 end =&gt; println(&quot;$n is even&quot;)
+        m::Int                  =&gt; println(&quot;$m is odd&quot;)
+    end
+# methods for generic function _iseven
+_iseven(a) at none:1</code></pre><p>It is sometimes easier to use the <code>where</code> syntax for guards:</p><pre><code class="nohighlight hljs">julia&gt; _iseven(a) = @match a begin
+        n::Int where n%2 == 0   =&gt; println(&quot;$n is even&quot;)
+        m::Int                  =&gt; println(&quot;$m is odd&quot;)
+    end
+# methods for generic function _iseven
+_iseven(a) at none:1</code></pre><h3 id="@match_return-macro"><a class="docs-heading-anchor" href="#@match_return-macro"><code>@match_return</code> macro</a><a id="@match_return-macro-1"></a><a class="docs-heading-anchor-permalink" href="#@match_return-macro" title="Permalink"></a></h3><pre><code class="nohighlight hljs">@match_return value</code></pre><p>Within the result value (to the right of the <code>=&gt;</code>) part of a <code>@match</code> case, you can use the <code>@match_return</code> macro to return a result early, before the end of the block.  This is useful if you have a shortcut for computing the result in some cases. You can think of it as a <code>return</code> statement for the <code>@match</code> macro.</p><p>Use of this macro anywhere else will result in an error.</p><h3 id="@match_fail-macros"><a class="docs-heading-anchor" href="#@match_fail-macros"><code>@match_fail</code> macros</a><a id="@match_fail-macros-1"></a><a class="docs-heading-anchor-permalink" href="#@match_fail-macros" title="Permalink"></a></h3><pre><code class="nohighlight hljs">@match_fail</code></pre><p>Inside the result part of a <code>@match</code> case, you can cause the case to fail as if the corresponding pattern did not match.  The <code>@match</code> statement will resume attempting to match the following cases.  This is useful if you want to write some complex code that would be awkward to express as a guard.</p><p>Use of this macro anywhere else will result in an error.</p><h2 id="single-case-@match-macro"><a class="docs-heading-anchor" href="#single-case-@match-macro">single-case <code>@match</code> macro</a><a id="single-case-@match-macro-1"></a><a class="docs-heading-anchor-permalink" href="#single-case-@match-macro" title="Permalink"></a></h2><pre><code class="nohighlight hljs">@match pattern = value</code></pre><p>Returns the value if it matches the pattern, and binds any pattern variables. Otherwise, throws <code>MatchFailure</code>.</p><h2 id="ismatch-macro"><a class="docs-heading-anchor" href="#ismatch-macro"><code>ismatch</code> macro</a><a id="ismatch-macro-1"></a><a class="docs-heading-anchor-permalink" href="#ismatch-macro" title="Permalink"></a></h2><pre><code class="nohighlight hljs">@ismatch value pattern</code></pre><p>Returns <code>true</code> if <code>value</code> matches <code>pattern</code>, <code>false</code> otherwise.  When returning <code>true</code>, binds the pattern variables in the enclosing scope.</p><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><p>Here are a couple of additional examples.</p><h2 id="Mathematica-Inspired-Sparse-Array-Constructor"><a class="docs-heading-anchor" href="#Mathematica-Inspired-Sparse-Array-Constructor">Mathematica-Inspired Sparse Array Constructor</a><a id="Mathematica-Inspired-Sparse-Array-Constructor-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematica-Inspired-Sparse-Array-Constructor" title="Permalink"></a></h2><p><a href="https://github.com/JuliaServices/Match.jl/issues/29">Contributed by @benkj</a></p><blockquote><p>I&#39;ve realized that <code>Match.jl</code> is perfect for creating in Julia an equivalent of <a href="https://reference.wolfram.com/language/ref/SparseArray.html">SparseArray</a> which I find quite useful in Mathematica.</p><p>My basic implementation is this:</p><pre><code class="nohighlight hljs">macro sparsearray(size, rule)
+    return quote
+        _A = spzeros($size...)
+        $(push!(rule.args, :(_ =&gt; 0)))
+
+        for _itr in eachindex(_A)
+            _A[_itr] = @match(_itr.I, $rule)
+        end
+        _A
+    end
+end</code></pre><p>Example:</p><pre><code class="nohighlight hljs">julia&gt; A = @sparsearray (5,5)  begin
+               (n,m), if n==m+1 end =&gt; m
+               (n,m), if n==m-1 end =&gt; n+10
+               (1,5) =&gt; 1
+       end</code></pre><p>which creates the matrix:</p><pre><code class="nohighlight hljs">julia&gt; full(A)
+5x5 Array{Float64,2}:
+ 0.0  11.0   0.0   0.0   1.0
+ 1.0   0.0  12.0   0.0   0.0
+ 0.0   2.0   0.0  13.0   0.0
+ 0.0   0.0   3.0   0.0  14.0
+ 0.0   0.0   0.0   4.0   0.0</code></pre></blockquote><h2 id="Matching-Exprs"><a class="docs-heading-anchor" href="#Matching-Exprs">Matching Exprs</a><a id="Matching-Exprs-1"></a><a class="docs-heading-anchor-permalink" href="#Matching-Exprs" title="Permalink"></a></h2><p>The <code>@match</code> macro can be used to match Julia expressions (<code>Expr</code> objects). One issue is that the <a href="http://docs.julialang.org/en/release-0.4/manual/metaprogramming/#program-representation">internal structure of Expr objects</a> doesn&#39;t match their constructor exactly, so one has to put arguments in brackets, as well as capture the <code>typ</code> field of macros.</p><p>The following function is a nice example of matching expressions. It is used in <code>VideoIO.jl</code> to extract the names of expressions generated by <code>Clang.jl</code>, for later filtering and rewriting.:</p><pre><code class="language-julia hljs">extract_name(x) = string(x)
+function extract_name(e::Expr)
+    @match e begin
+        Expr(:type,      [_, name, _])     =&gt; name
+        Expr(:typealias, [name, _])        =&gt; name
+        Expr(:call,      [name, _...])     =&gt; name
+        Expr(:function,  [sig, _...])      =&gt; extract_name(sig)
+        Expr(:const,     [assn, _...])     =&gt; extract_name(assn)
+        Expr(:(=),       [fn, body, _...]) =&gt; extract_name(fn)
+        Expr(expr_type,  _...)             =&gt; error(&quot;Can&#39;t extract name from &quot;,
+                                                     expr_type, &quot; expression:\n&quot;,
+                                                     &quot;    $e\n&quot;)
+    end
+end</code></pre><h1 id="Inspiration"><a class="docs-heading-anchor" href="#Inspiration">Inspiration</a><a id="Inspiration-1"></a><a class="docs-heading-anchor-permalink" href="#Inspiration" title="Permalink"></a></h1><p>The following pages on pattern matching in scala provided inspiration for the library:</p><ul><li><a href="http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/">http://thecodegeneral.wordpress.com/2012/03/25/switch-statements-on-steroids-scala-pattern-matching/</a></li><li><a href="http://java.dzone.com/articles/scala-pattern-matching-case">http://java.dzone.com/articles/scala-pattern-matching-case</a></li><li><a href="http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/">http://kerflyn.wordpress.com/2011/02/14/playing-with-scalas-pattern-matching/</a></li><li><a href="http://docs.scala-lang.org/tutorials/tour/case-classes.html">http://docs.scala-lang.org/tutorials/tour/case-classes.html</a></li></ul><p>The following paper on pattern-matching inspired the automaton approach to code generation:</p><ul><li><a href="https://www.cs.tufts.edu/~nr/cs257/archive/norman-ramsey/match.pdf">https://www.cs.tufts.edu/~nr/cs257/archive/norman-ramsey/match.pdf</a></li></ul><h1 id="API-Documentation"><a class="docs-heading-anchor" href="#API-Documentation">API Documentation</a><a id="API-Documentation-1"></a><a class="docs-heading-anchor-permalink" href="#API-Documentation" title="Permalink"></a></h1><ul><li><a href="#Match.MatchFailure"><code>Match.MatchFailure</code></a></li><li><a href="#Match.match_fieldnames-Tuple{Type}"><code>Match.match_fieldnames</code></a></li><li><a href="#Match.@__match__-Tuple{Any, Any}"><code>Match.@__match__</code></a></li><li><a href="#Match.@ismatch"><code>Match.@ismatch</code></a></li><li><a href="#Match.@match"><code>Match.@match</code></a></li><li><a href="#Match.@match_fail"><code>Match.@match_fail</code></a></li><li><a href="#Match.@match_fail-Tuple{}"><code>Match.@match_fail</code></a></li><li><a href="#Match.@match_return-Tuple{Any}"><code>Match.@match_return</code></a></li><li><a href="#Match.@match_return"><code>Match.@match_return</code></a></li></ul><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.MatchFailure" href="#Match.MatchFailure"><code>Match.MatchFailure</code></a> — <span class="docstring-category">Type</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">MatchFailure(value)</code></pre><p>Construct an exception to be thrown when a value fails to match a pattern in the <code>@match</code> macro.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/Match.jl#L240-L245">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.match_fieldnames-Tuple{Type}" href="#Match.match_fieldnames-Tuple{Type}"><code>Match.match_fieldnames</code></a> — <span class="docstring-category">Method</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">match_fieldnames(type::Type)</code></pre><p>Return a tuple containing the ordered list of the names (as Symbols) of fields that can be matched either nominally or positionally.  This list should exclude synthetic fields that are produced by packages such as Mutts and AutoHashEqualsCached.  This function may be overridden by the client to hide fields that should not be matched.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/binding.jl#L470-L477">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@__match__-Tuple{Any, Any}" href="#Match.@__match__-Tuple{Any, Any}"><code>Match.@__match__</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><p>Usage:</p><pre><code class="nohighlight hljs">    @__match__ value begin
+        pattern1 =&gt; result1
+        pattern2 =&gt; result2
+        ...
+    end</code></pre><p>Return <code>result</code> for the first matching <code>pattern</code>. If there are no matches, throw <code>MatchFailure</code>. This uses a brute-force code gen strategy, essentially a series of if-else statements. It is used for testing purposes, as a reference for correct semantics. Because it is so simple, we have confidence about its correctness.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/matchmacro.jl#L78-L93">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@ismatch" href="#Match.@ismatch"><code>Match.@ismatch</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@ismatch value pattern</code></pre><p>Return <code>true</code> if <code>value</code> matches <code>pattern</code>, <code>false</code> otherwise.  When returning <code>true</code>, binds the pattern variables in the enclosing scope.</p><p>See also <code>@match</code> for the syntax of patterns</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; struct Point
+            x
+            y
+        end
+
+julia&gt; p = Point(0, 3)
+Point(0, 3)
+
+julia&gt; if @ismatch p Point(0, y)
+            println(&quot;On the y axis at y = &quot;, y)
+        end
+On the y axis at y = 3</code></pre><p>Guarded patterns ought not be used with <code>@ismatch</code>, as you can just use <code>&amp;&amp;</code> instead:</p><pre><code class="language-julia-repl hljs">julia&gt; if (@ismatch p Point(x, y)) &amp;&amp; x &lt; y
+            println(&quot;The point (&quot;, x, &quot;, &quot;, y, &quot;) is in the upper left semiplane&quot;)
+        end
+The point (0, 3) is in the upper left semiplane</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/Match.jl#L204-L237">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@match" href="#Match.@match"><code>Match.@match</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@match pattern = value
+@match value begin
+    pattern1 =&gt; result1
+    pattern2 =&gt; result2
+    ...
+end</code></pre><p>Match a given value to a pattern or series of patterns.</p><p>This macro has two forms.  In the first form</p><pre><code class="nohighlight hljs">@match pattern = value</code></pre><p>Return the value if it matches the pattern, and bind any pattern variables. Otherwise, throw <code>MatchFailure</code>.</p><p>In the second form</p><pre><code class="nohighlight hljs">@match value begin
+    pattern1 =&gt; result1
+    pattern2 =&gt; result2
+    ...
+end</code></pre><p>Return <code>result</code> for the first matching <code>pattern</code>. If there are no matches, throw <code>MatchFailure</code>.</p><p>To avoid a <code>MatchFailure</code> exception, write the <code>@match</code> to handle every possible input. One way to do that is to add a final case with the wildcard pattern <code>_</code>.</p><p><strong>See Also</strong></p><p>See also</p><ul><li><code>@match_fail</code></li><li><code>@match_return</code></li><li><code>@ismatch</code></li></ul><p><strong>Patterns:</strong></p><p>The following syntactic forms can be used in patterns:</p><ul><li><code>_</code> matches anything</li><li><code>x</code> (an identifier) matches anything, binds value to the variable <code>x</code></li><li><code>T(x,y,z)</code> matches structs of type <code>T</code> with fields matching patterns <code>x,y,z</code></li><li><code>T(y=1)</code> matches structs of type <code>T</code> whose <code>y</code> field equals <code>1</code></li><li><code>[x,y,z]</code> matches <code>AbstractArray</code>s with 3 entries matching <code>x,y,z</code></li><li><code>(x,y,z)</code> matches <code>Tuple</code>s with 3 entries matching <code>x,y,z</code></li><li><code>[x,y...,z]</code> matches <code>AbstractArray</code>s with at least 2 entries, where <code>x</code> matches the first entry, <code>z</code> matches the last entry and <code>y</code> matches the remaining entries.</li><li><code>(x,y...,z)</code> matches <code>Tuple</code>s with at least 2 entries, where <code>x</code> matches the first entry, <code>z</code> matches the last entry and <code>y</code> matches the remaining entries.</li><li><code>::T</code> matches any subtype (<code>isa</code>) of type <code>T</code></li><li><code>x::T</code> matches any subtype (<code>isa</code>) of T that also matches pattern <code>x</code></li><li><code>x || y</code> matches values which match either pattern <code>x</code> or <code>y</code> (only variables which exist in both branches will be bound)</li><li><code>x &amp;&amp; y</code> matches values which match both patterns <code>x</code> and <code>y</code></li><li><code>x, if condition end</code> matches only if <code>condition</code> is true (<code>condition</code> may use any variables that occur earlier in the pattern eg <code>(x, y, z where x + y &gt; z)</code>)</li><li><code>x where condition</code> An alternative form for <code>x, if condition end</code></li><li>Anything else is treated as a constant and tested for equality</li><li>Expressions can be interpolated in as constants via standard interpolation syntax <code>$(x)</code>.  Interpolations may use previously bound variables.</li></ul><p>Patterns can be nested arbitrarily.</p><p>Repeated variables only match if they are equal (<code>isequal</code>). For example <code>(x,x)</code> matches <code>(1,1)</code> but not <code>(1,2)</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; value=(1, 2, 3, 4)
+(1, 2, 3, 4)
+
+julia&gt; @match (x, y..., z) = value
+(1, 2, 3, 4)
+
+julia&gt; x
+1
+
+julia&gt; y
+(2, 3)
+
+julia&gt; z
+4
+
+julia&gt; struct Foo
+           x::Int64
+           y::String
+       end
+
+julia&gt; f(x) = @match x begin
+           _::String =&gt; :string
+           [a,a,a] =&gt; (:all_the_same, a)
+           [a,bs...,c] =&gt; (:at_least_2, a, bs, c)
+           Foo(x, &quot;foo&quot;) where x &gt; 1 =&gt; :foo
+       end
+f (generic function with 1 method)
+
+julia&gt; f(&quot;foo&quot;)
+:string
+
+julia&gt; f([1,1,1])
+(:all_the_same, 1)
+
+julia&gt; f([1,1])
+(:at_least_2, 1, Int64[], 1)
+
+julia&gt; f([1,2,3,4])
+(:at_least_2, 1, [2, 3], 4)
+
+julia&gt; f([1])
+ERROR: MatchFailure([1])
+...
+
+julia&gt; f(Foo(2, &quot;foo&quot;))
+:foo
+
+julia&gt; f(Foo(0, &quot;foo&quot;))
+ERROR: MatchFailure(Foo(0, &quot;foo&quot;))
+...
+
+julia&gt; f(Foo(2, &quot;not a foo&quot;))
+ERROR: MatchFailure(Foo(2, &quot;not a foo&quot;))
+...</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/Match.jl#L10-L131">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@match_fail" href="#Match.@match_fail"><code>Match.@match_fail</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@match_fail</code></pre><p>Inside the result part of a @match case, you can cause the pattern to fail (as if the pattern did not match).</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; struct Vect
+           x
+           y
+       end
+
+julia&gt; function norm(v)
+           @match v begin
+               Vect(x, y) =&gt; begin
+                   if x==0 &amp;&amp; y==0
+                       @match_fail
+                   end
+                   l = sqrt(x^2 + y^2)
+                   Vect(x/l, y/l)
+                   end
+               _ =&gt; v
+           end
+       end
+norm (generic function with 1 method)
+
+julia&gt; norm(Vect(2, 3))
+Vect(0.5547001962252291, 0.8320502943378437)
+
+julia&gt; norm(Vect(0, 0))
+Vect(0, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/Match.jl#L169-L201">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@match_fail-Tuple{}" href="#Match.@match_fail-Tuple{}"><code>Match.@match_fail</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@match_fail</code></pre><p>This statement permits early-exit from the value of a @match case. The programmer may write the value as a <code>begin ... end</code> and then, within the value, the programmer may write</p><pre><code class="nohighlight hljs">@match_fail</code></pre><p>to cause the case to terminate as if its pattern had failed. This permits cases to perform some computation before deciding if the rule &quot;<em>really</em>&quot; matched.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/match_return.jl#L1-L13">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@match_return" href="#Match.@match_return"><code>Match.@match_return</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@match_return value</code></pre><p>Inside the result part of a @match case, you can return a given value early.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; struct Vect
+           x
+           y
+       end
+
+julia&gt; function norm(v)
+           @match v begin
+               Vect(x, y) =&gt; begin
+                   if x==0 &amp;&amp; y==0
+                       @match_return v
+                   end
+                   l = sqrt(x^2 + y^2)
+                   Vect(x/l, y/l)
+                   end
+               _ =&gt; v
+           end
+       end
+norm (generic function with 1 method)
+
+julia&gt; norm(Vect(2, 3))
+Vect(0.5547001962252291, 0.8320502943378437)
+
+julia&gt; norm(Vect(0, 0))
+Vect(0, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/Match.jl#L134-L166">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Match.@match_return-Tuple{Any}" href="#Match.@match_return-Tuple{Any}"><code>Match.@match_return</code></a> — <span class="docstring-category">Macro</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">@match_return value</code></pre><p>This statement permits early-exit from the value of a @match case. The programmer may write the value as a <code>begin ... end</code> and then, within the value, the programmer may write</p><pre><code class="nohighlight hljs">@match_return value</code></pre><p>to terminate the value expression <strong>early</strong> with success, with the given value.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaServices/Match.jl/blob/8bcb71f7465e3f1389dfe9e9a88892fc404dac51/src/match_return.jl#L20-L31">source</a></section></article></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Monday 11 November 2024 20:52">Monday 11 November 2024</span>. Using Julia version 1.11.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
