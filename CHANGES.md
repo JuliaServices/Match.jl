@@ -1,3 +1,29 @@
+
+v2.4.0 / 2024-12-25
+===================
+
+  * Add support for named tuples and matching fields
+    by name rather than position.
+
+v2.3.0 / 2024-11-24
+===================
+
+  * Add support for "extractors", which adds some support
+    for user-defined pattern-matching behavior.
+
+v2.2.0 / 2024-11-11
+===================
+
+  * Add support for MLStyle-style guards, which are
+    patterns of the form `if condition end`. This should
+    make it easier for people migrating from MLStyle.
+
+v2.1.0 / 2023-12-19
+===================
+
+  * When a variable is defined on only one side of a disjuntion,
+    it is not considered to have been defined after the disjunction.
+
 v2.0.0 / 2023-08-02
 ===================
 
