@@ -33,11 +33,9 @@ file = Symbol(@__FILE__)
     let line = 0
         try
             line = (@__LINE__) + 1
-            @eval @match_return 2
+            @match_return 2
             @test false
-        catch ex
-            @test ex isa LoadError
-            e = ex.error
+        catch e
             @test e isa ErrorException
             @test e.msg == "$file:$line: @match_return may only be used within the value of a @match case."
         end
@@ -48,11 +46,9 @@ end
     let line = 0
         try
             line = (@__LINE__) + 1
-            @eval @match_fail
+            @match_fail
             @test false
-        catch ex
-            @test ex isa LoadError
-            e = ex.error
+        catch e
             @test e isa ErrorException
             @test e.msg == "$file:$line: @match_fail may only be used within the value of a @match case."
         end

@@ -167,16 +167,6 @@ function bind_pattern!(
         # a constant, e.g. a regular expression, version number, raw string, etc.
         pattern = BoundIsMatchTestPattern(input, BoundExpression(location, source), false)
 
-    elseif is_expr(source, :macrocall)
-        # We permit custom string macros as long as they do not contain any unbound
-        # variables.  We accomplish that simply by expanding the macro.  Macros that
-        # interpolate, like lazy"", will fail because they produce a `call` rather
-        # than an object.  Also, we permit users to define macros that expand to patterns.
-        while is_expr(source, :macrocall)
-            source = macroexpand(binder.mod, source; recursive = false)
-        end
-        (pattern, assigned) = bind_pattern!(location, source, input, binder, assigned)
-
     elseif is_expr(source, :$)
         # an interpolation
         interpolation = source.args[1]
@@ -673,13 +663,12 @@ function bind_case(
     case,
     predeclared_temps,
     binder::BinderContext)::BoundCase
+    case = macroexpand(binder.mod, case)
+
     while true
         # do some rewritings if needed
-        if is_expr(case, :macrocall)
-            # expand top-level macros only
-            case = macroexpand(binder.mod, case, recursive=false)
 
-        elseif is_expr(case, :tuple, 2) && is_case(case.args[2]) && is_expr(case.args[2].args[2], :if, 2)
+        if is_expr(case, :tuple, 2) && is_case(case.args[2]) && is_expr(case.args[2].args[2], :if, 2)
             # rewrite `pattern, if guard end => result`, which parses as
             # `pattern, (if guard end => result)`
             # to `(pattern, if guard end) => result`

@@ -1,38 +1,34 @@
-"""
-    @match_fail
-
-This statement permits early-exit from the value of a @match case.
-The programmer may write the value as a `begin ... end` and then,
-within the value, the programmer may write
-
-    @match_fail
-
-to cause the case to terminate as if its pattern had failed.
-This permits cases to perform some computation before deciding if the
-rule "*really*" matched.
-"""
 macro match_fail()
-    # These are rewritten during expansion of the `@match` macro,
-    # so the actual macro should not be used directly.
-    error("$(__source__.file):$(__source__.line): @match_fail may only be used within the value of a @match case.")
+    # These are rewritten during expansion of the `@match` macro.
+    Expr(:call, :__match_fail__, QuoteNode(__source__))
 end
 
-"""
-    @match_return value
-
-This statement permits early-exit from the value of a @match case.
-The programmer may write the value as a `begin ... end` and then,
-within the value, the programmer may write
-
-    @match_return value
-
-to terminate the value expression **early** with success, with the
-given value.
-"""
 macro match_return(x)
-    # These are rewritten during expansion of the `@match` macro,
-    # so the actual macro should not be used.
-    error("$(__source__.file):$(__source__.line): @match_return may only be used within the value of a @match case.")
+    # These are rewritten during expansion of the `@match` macro.
+    Expr(:call, :__match_return__, QuoteNode(__source__), esc(x))
+end
+
+function __match_fail__(location)
+    error("$(location.file):$(location.line): @match_fail may only be used within the value of a @match case.")
+end
+
+function __match_return__(location, _)
+    error("$(location.file):$(location.line): @match_return may only be used within the value of a @match case.")
+end
+
+# is f a reference to the __match_fail__ function?
+function is_match_fail(f)
+    f == Match.__match_fail__ || f == GlobalRef(Match, :__match_fail__)
+end
+
+# is f a reference to the __match_return__ function?
+function is_match_return(f)
+    f == Match.__match_return__ || f == GlobalRef(Match, :__match_return__)
+end
+
+# is f an early exit function?
+function is_early_exit(f)
+    is_match_fail(f) || is_match_return(f)
 end
 
 #
@@ -78,30 +74,18 @@ end
 function adjust_case_for_return_macro(__module__, location, pattern, result, predeclared_temps)
     found_early_exit::Bool = false
 
-    # Check for the presence of early exit macros @match_return and @match_fail
+    # Check for the presence of early exit macros
     function adjust_top(p)
-        if is_macro(p, :var"@match_return", 3)
-            # :(@match_return e) -> :($value = $e; @goto $label)
-            found_early_exit = true
-            # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
-            return p
-        elseif is_macro(p, :var"@match_fail", 2)
-            # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
-            found_early_exit = true
-            # expansion of the result will be done later by ExpressionRequiringAdjustmentForReturnMacro 
-            return p
-        elseif is_macro(p, :var"@match", 4)
-            # Nested uses of @match should be treated as independent
-            return macroexpand(__module__, p)
-        elseif is_expr(p, :macrocall)
-            # It is possible for a macro to expand into @match_fail, so only expand one step.
-            return adjust_top(macroexpand(__module__, p; recursive = false))
-        else
-            return p
+        if !found_early_exit && is_expr(p, :call)
+            f = p.args[1]
+            if is_early_exit(f)
+                found_early_exit = true
+            end
         end
+        return p
     end
+    MacroTools.postwalk(adjust_top, result)
 
-    rewritten_result = MacroTools.prewalk(adjust_top, result)
     if found_early_exit
         # Since we found an early exit, we need to predeclare the temp to ensure
         # it is in scope both for where it is written and in the constructed where clause.
@@ -109,19 +93,13 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
         push!(predeclared_temps, value_symbol)
         
         # Defer generation of the label and branch, so we get a unique label in case it needs to be generated more than once.
-        where_expr = where_expression_requiring_adjustment_for_return_macro(value_symbol, location, rewritten_result)
+        where_expr = where_expression_requiring_adjustment_for_return_macro(value_symbol, location, result)
         new_pattern = :($pattern where $where_expr)
         new_result = value_symbol
         (new_pattern, new_result)
     else
-        (pattern, rewritten_result)
+        (pattern, result)
     end
-end
-
-function is_macro(x, name::Symbol, arity::Int)
-    return is_expr(x, :macrocall) && ## length(x.args) == arity &&
-        (x.args[1] == name ||
-         x.args[1] == Expr(:., Symbol(string(@__MODULE__)), QuoteNode(name)))
 end
 
 const marker_for_where_expression_requiring_adjustment_for_return_macro =
@@ -147,15 +125,20 @@ function code_for_expression(x::Expr)
     label = gensym("early_label")
 
     function adjust_top(result)
-        if is_macro(result, :var"@match_return", 3)
+        is_expr(result, :call) || return result
+        f = result.args[1]
+        new_result = if is_match_return(f)
+            _, source, value = result.args
             # :(@match_return e) -> :($value = $e; @goto $label)
-            return Expr(:block, result.args[2], :($value_symbol = $(result.args[3])), :(@goto $label))
-        elseif is_macro(result, :var"@match_fail", 2)
+            Expr(:block, source, :($value_symbol = $(value)), :(@goto $label))
+        elseif is_match_fail(f)
+            _, source = result.args
             # :(@match_fail) -> :($value = $MatchFaulure; @goto $label)
-            return Expr(:block, result.args[2], :($value_symbol = $MatchFailure), :(@goto $label))
+            Expr(:block, source, :($value_symbol = $MatchFailure), :(@goto $label))
         else
-            return result 
+            result
         end
+        return new_result
     end
 
     rewritten_result = MacroTools.prewalk(adjust_top, expression_containing_macro)
