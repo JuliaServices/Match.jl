@@ -75,7 +75,7 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
     found_early_exit::Bool = false
 
     # Check for the presence of early exit macros
-    function adjust_top(p)
+    function check_for_early_exit(p)
         if !found_early_exit && is_expr(p, :call)
             f = p.args[1]
             if is_early_exit(f)
@@ -84,7 +84,7 @@ function adjust_case_for_return_macro(__module__, location, pattern, result, pre
         end
         return p
     end
-    MacroTools.postwalk(adjust_top, result)
+    MacroTools.postwalk(check_for_early_exit, result)
 
     if found_early_exit
         # Since we found an early exit, we need to predeclare the temp to ensure
