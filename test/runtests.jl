@@ -2,7 +2,7 @@ module Rematch2Tests
 
 using Match
 using Match: topological_sort, @__match__
-using ReTest
+using Test
 using Random
 using MacroTools: MacroTools
 
@@ -15,7 +15,5 @@ include("topological.jl")
 include("match_return.jl")
 include("test_ismatch.jl")
 include("matchtests.jl")
-
-retest(Rematch2Tests)
 
 end # module
