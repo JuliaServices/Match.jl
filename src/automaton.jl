@@ -83,8 +83,7 @@ mutable struct DeduplicatedAutomatonNode <: AbstractAutomatonNode
         new(action, next, hash((action, next)))
     end
 end
-Base.hash(node::DeduplicatedAutomatonNode, h::UInt64) = hash(node._cached_hash, h)
-Base.hash(node::DeduplicatedAutomatonNode) = node._cached_hash
+Base.hash(node::DeduplicatedAutomatonNode, h::UInt) = hash(node._cached_hash, h)
 function Base.:(==)(a::DeduplicatedAutomatonNode, b::DeduplicatedAutomatonNode)
     a === b ||
         a._cached_hash == b._cached_hash &&
