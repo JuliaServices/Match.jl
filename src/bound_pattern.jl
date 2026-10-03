@@ -245,7 +245,8 @@ struct BoundFetchIndexPattern <: BoundFetchPattern
     location::LineNumberNode
     source::Any
     input::Symbol
-    # index value.  If negative, it is from the end.  `-1` accesses the last element
+    # One-based position from the beginning, or negative position from the end.
+    # `-1` accesses the last element, regardless of the input's native indices.
     index::Int
     type::Type
 end
@@ -261,7 +262,7 @@ struct BoundFetchRangePattern <: BoundFetchPattern
     location::LineNumberNode
     source::Any
     input::Symbol
-    first_index::Int # first index to include
+    first_index::Int # one-based position of the first element to include
     from_end::Int    # distance from the end for the last included index; 0 to include the last element
     type::Type
 end
