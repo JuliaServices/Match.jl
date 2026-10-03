@@ -118,26 +118,26 @@ Something unexpected
 
 One nice feature is the ability to match embedded types, as well as bind variables to components of those types:
 
-```julia
-struct Address
-    street::String
-    city::String
-    zip::String
-end
+```jldoctest; setup = :(using Match)
+julia> struct Address
+           street::String
+           city::String
+           zip::String
+       end
 
-struct Person
-    firstname::String
-    lastname::String
-    address::Address
-end
+julia> struct Person
+           firstname::String
+           lastname::String
+           address::Address
+       end
 
-personinfo(person) = @match person begin
-  Person("Julia", lname,  _)           => "Found Julia $lname"
-  Person(fname, "Julia", _)            => "$fname Julia was here!"
-  Person(fname, lname,
-         Address(_, "Cambridge", zip)) => "$fname $lname lives in zip $zip"
-  Person(_...)                         => "Unknown person!"
-end
+julia> personinfo(person) = @match person begin
+           Person("Julia", lname, _)           => "Found Julia $lname"
+           Person(fname, "Julia", _)           => "$fname Julia was here!"
+           Person(fname, lname,
+                  Address(_, "Cambridge", zip)) => "$fname $lname lives in zip $zip"
+           Person(_, _, _)                     => "Unknown person!"
+       end;
 
 julia> personinfo(Person("Julia", "Robinson",
                   Address("450 Serra Mall", "Stanford", "94305")))
