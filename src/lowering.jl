@@ -75,12 +75,14 @@ end
 function code(bound_pattern::BoundFetchIndexPattern)
     i = bound_pattern.index
     if i < 0
-        i = :($length($(bound_pattern.input)) + $(i + 1))
+        i = :($lastindex($(bound_pattern.input)) + $(i + 1))
+    else
+        i = :($firstindex($(bound_pattern.input)) + $(i - 1))
     end
     :($getindex($(bound_pattern.input), $i))
 end
 function code(bound_pattern::BoundFetchRangePattern)
-    index = :($(bound_pattern.first_index):(length($(bound_pattern.input)) - $(bound_pattern.from_end)))
+    index = :(($firstindex($(bound_pattern.input)) + $(bound_pattern.first_index - 1)):($lastindex($(bound_pattern.input)) - $(bound_pattern.from_end)))
     :($getindex($(bound_pattern.input), $(index)))
 end
 function code(bound_pattern::BoundFetchLengthPattern)
