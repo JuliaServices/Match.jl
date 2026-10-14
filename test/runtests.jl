@@ -4,10 +4,12 @@ using Match
 using Match: topological_sort, @__match__
 using Test
 using Random
+using OffsetArrays
 using MacroTools: MacroTools
 
 include("testtypes.jl")
 include("rematch.jl")
+include("offsetarrays.jl")
 include("rematch2.jl")
 include("coverage.jl")
 include("nontrivial.jl")
