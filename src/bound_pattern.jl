@@ -25,7 +25,7 @@ struct BoundTruePattern <: BoundPattern
     location::LineNumberNode
     source::Any
 end
-Base.hash(::BoundTruePattern, h::UInt64) = hash(0x8cc17f34ef3bbb1d, h)
+Base.hash(::BoundTruePattern, h::UInt) = hash(0x8cc17f34ef3bbb1d, h)
 Base.:(==)(a::BoundTruePattern, b::BoundTruePattern) = true
 
 # A pattern that never matches
@@ -33,7 +33,7 @@ struct BoundFalsePattern <: BoundPattern
     location::LineNumberNode
     source::Any
 end
-Base.hash(::BoundFalsePattern, h::UInt64) = hash(0xeb817c7d6beb3bda, h)
+Base.hash(::BoundFalsePattern, h::UInt) = hash(0xeb817c7d6beb3bda, h)
 Base.:(==)(a::BoundFalsePattern, b::BoundFalsePattern) = true
 
 function BoundBoolPattern(location::LineNumberNode, source::Any, b::Bool)
@@ -62,7 +62,7 @@ struct BoundExpression
         new(location, source, assignments)
     end
 end
-function Base.hash(a::BoundExpression, h::UInt64)
+function Base.hash(a::BoundExpression, h::UInt)
     hash((a.source, a.assignments, 0xdbf4fc8b24ef8890), h)
 end
 # TODO: we should compare source ignoring location nodes contained within it
@@ -83,7 +83,7 @@ struct BoundIsMatchTestPattern <: BoundTestPattern
     # (for when pattern variables are reused in multiple places)
     force_equality::Bool
 end
-function Base.hash(a::BoundIsMatchTestPattern, h::UInt64)
+function Base.hash(a::BoundIsMatchTestPattern, h::UInt)
     hash((a.input, a.bound_expression, a.force_equality, 0x7e92a644c831493f), h)
 end
 function Base.:(==)(a::BoundIsMatchTestPattern, b::BoundIsMatchTestPattern)
@@ -105,7 +105,7 @@ struct BoundRelationalTestPattern <: BoundTestPattern
     relation::Symbol # one of `:<`, `:<=`, `:>`, `:>=`
     value::Int
 end
-function Base.hash(a::BoundRelationalTestPattern, h::UInt64)
+function Base.hash(a::BoundRelationalTestPattern, h::UInt)
     hash((a.input, a.relation, a.value, 0xbfe66949d262f0e0), h)
 end
 function Base.:(==)(a::BoundRelationalTestPattern, b::BoundRelationalTestPattern)
@@ -119,7 +119,7 @@ struct BoundWhereTestPattern <: BoundTestPattern
     input::Symbol # variable holding the evaluated where clause
     inverted::Bool # If the sense of the test is inverted
 end
-function Base.hash(a::BoundWhereTestPattern, h::UInt64)
+function Base.hash(a::BoundWhereTestPattern, h::UInt)
     hash((a.input, a.inverted, 0x868a8076acbe0e12), h)
 end
 function Base.:(==)(a::BoundWhereTestPattern, b::BoundWhereTestPattern)
@@ -133,7 +133,7 @@ struct BoundTypeTestPattern <: BoundTestPattern
     input::Symbol
     type::Type # typically the type that source binds to
 end
-function Base.hash(a::BoundTypeTestPattern, h::UInt64)
+function Base.hash(a::BoundTypeTestPattern, h::UInt)
     hash((a.input, a.type, 0x92b4a01b9f8cb47b), h)
 end
 function Base.:(==)(a::BoundTypeTestPattern, b::BoundTypeTestPattern)
@@ -145,7 +145,7 @@ struct BoundOrPattern <: BoundPattern
     location::LineNumberNode
     source::Any
     subpatterns::ImmutableVector{BoundPattern}
-    _cached_hash::UInt64
+    _cached_hash::UInt
     function BoundOrPattern(
         location::LineNumberNode,
         source::Any,
@@ -169,11 +169,11 @@ struct BoundOrPattern <: BoundPattern
             return gathered_subpatterns[1]
         else
             return new(location, source, gathered_subpatterns,
-                hash(subpatterns, 0x82d8dc51bf845b12))
+                hash(subpatterns, 0x82d8dc51bf845b12 % UInt))
         end
     end
 end
-Base.hash(a::BoundOrPattern, h::UInt64) = hash(a._cached_hash, h)
+Base.hash(a::BoundOrPattern, h::UInt) = hash(a._cached_hash, h)
 function Base.:(==)(a::BoundOrPattern, b::BoundOrPattern)
     a._cached_hash == b._cached_hash && a.subpatterns == b.subpatterns
 end
@@ -183,7 +183,7 @@ struct BoundAndPattern <: BoundPattern
     location::LineNumberNode
     source::Any
     subpatterns::Vector{BoundPattern}
-    _cached_hash::UInt64
+    _cached_hash::UInt
     function BoundAndPattern(
         location::LineNumberNode,
         source::Any,
@@ -207,11 +207,11 @@ struct BoundAndPattern <: BoundPattern
             return gathered_subpatterns[1]
         else
             return new(location, source, gathered_subpatterns,
-                hash(subpatterns, 0x9b7f2a204d994a1a))
+                hash(subpatterns, 0x9b7f2a204d994a1a % UInt))
         end
     end
 end
-Base.hash(a::BoundAndPattern, h::UInt64) = hash(a._cached_hash, h)
+Base.hash(a::BoundAndPattern, h::UInt) = hash(a._cached_hash, h)
 function Base.:(==)(a::BoundAndPattern, b::BoundAndPattern)
     a._cached_hash == b._cached_hash && a.subpatterns == b.subpatterns
 end
@@ -230,7 +230,7 @@ struct BoundFetchFieldPattern <: BoundFetchPattern
 end
 # For the purposes of whether or not two fetches are the same: if they are fetching
 # the same field name (from the same input), then yes.
-function Base.hash(a::BoundFetchFieldPattern, h::UInt64)
+function Base.hash(a::BoundFetchFieldPattern, h::UInt)
     hash((a.input, a.field_name, 0x0c5266ab2b5ed7f1), h)
 end
 function Base.:(==)(a::BoundFetchFieldPattern, b::BoundFetchFieldPattern)
@@ -250,7 +250,7 @@ struct BoundFetchIndexPattern <: BoundFetchPattern
     index::Int
     type::Type
 end
-function Base.hash(a::BoundFetchIndexPattern, h::UInt64)
+function Base.hash(a::BoundFetchIndexPattern, h::UInt)
     hash((a.input, a.index, 0x820a6d07cc13ac86), h)
 end
 function Base.:(==)(a::BoundFetchIndexPattern, b::BoundFetchIndexPattern)
@@ -266,7 +266,7 @@ struct BoundFetchRangePattern <: BoundFetchPattern
     from_end::Int    # distance from the end for the last included index; 0 to include the last element
     type::Type
 end
-function Base.hash(a::BoundFetchRangePattern, h::UInt64)
+function Base.hash(a::BoundFetchRangePattern, h::UInt)
     hash((a.input, a.first_index, a.from_end, 0x7aea7756428a1646), h)
 end
 function Base.:(==)(a::BoundFetchRangePattern, b::BoundFetchRangePattern)
@@ -280,7 +280,7 @@ struct BoundFetchLengthPattern <: BoundFetchPattern
     input::Symbol
     type::Type
 end
-function Base.hash(a::BoundFetchLengthPattern, h::UInt64)
+function Base.hash(a::BoundFetchLengthPattern, h::UInt)
     hash((a.input, 0xa7167fae5a24c457), h)
 end
 function Base.:(==)(a::BoundFetchLengthPattern, b::BoundFetchLengthPattern)
@@ -297,7 +297,7 @@ struct BoundFetchExtractorPattern <: BoundFetchPattern
     arity::Int
     type::Type
 end
-function Base.hash(a::BoundFetchExtractorPattern, h::UInt64)
+function Base.hash(a::BoundFetchExtractorPattern, h::UInt)
     hash((a.input, a.extractor, a.arity, 0xd7882f5b4888d335), h)
 end
 function Base.:(==)(a::BoundFetchExtractorPattern, b::BoundFetchExtractorPattern)
@@ -316,7 +316,7 @@ struct BoundFetchExpressionPattern <: BoundFetchPattern
     key::Union{Nothing, Symbol}
     type::Type
 end
-function Base.hash(a::BoundFetchExpressionPattern, h::UInt64)
+function Base.hash(a::BoundFetchExpressionPattern, h::UInt)
     hash((a.bound_expression, a.key, 0x53f0f6a137a891d8), h)
 end
 function Base.:(==)(a::BoundFetchExpressionPattern, b::BoundFetchExpressionPattern)
@@ -363,14 +363,14 @@ struct BoundCase
     # The user's result expression for this case.
     result_expression::BoundExpression
 
-    _cached_hash::UInt64
+    _cached_hash::UInt
     function BoundCase(
         case_number::Int,
         location::LineNumberNode,
         pattern_source,
         pattern::BoundPattern,
         result_expression::BoundExpression)
-        _hash = hash((case_number, pattern, result_expression), 0x1cdd9657bfb1e645)
+        _hash = hash((case_number, pattern, result_expression), 0x1cdd9657bfb1e645 % UInt)
         new(case_number, location, pattern_source, pattern, result_expression, _hash)
     end
 end
@@ -384,7 +384,7 @@ function with_pattern(
         new_pattern,
         case.result_expression)
 end
-function Base.hash(case::BoundCase, h::UInt64)
+function Base.hash(case::BoundCase, h::UInt)
     hash(case._cached_hash, h)
 end
 function Base.:(==)(a::BoundCase, b::BoundCase)

@@ -27,7 +27,7 @@ mutable struct AutomatonNode <: AbstractAutomatonNode
     #   to go to if the result of the test is true ([1]) or false ([2]).
     next::Union{Nothing, Tuple{}, Tuple{AutomatonNode}, Tuple{AutomatonNode, AutomatonNode}}
 
-    @_const _cached_hash::UInt64
+    @_const _cached_hash::UInt
 
     function AutomatonNode(cases::Vector{BoundCase})
         cases = filter(case -> !(case.pattern isa BoundFalsePattern), cases)
@@ -37,10 +37,10 @@ mutable struct AutomatonNode <: AbstractAutomatonNode
                 break
             end
         end
-        new(ImmutableVector(cases), nothing, nothing, hash(cases, 0xc98a9a23c2d4d915))
+        new(ImmutableVector(cases), nothing, nothing, hash(cases, 0xc98a9a23c2d4d915 % UInt))
     end
 end
-Base.hash(case::AutomatonNode, h::UInt64) = hash(case._cached_hash, h)
+Base.hash(case::AutomatonNode, h::UInt) = hash(case._cached_hash, h)
 function Base.:(==)(a::AutomatonNode, b::AutomatonNode)
     a === b ||
         a._cached_hash == b._cached_hash &&
@@ -77,7 +77,7 @@ mutable struct DeduplicatedAutomatonNode <: AbstractAutomatonNode
     #   false ([2]).
     @_const next::Union{Tuple{}, Tuple{DeduplicatedAutomatonNode}, Tuple{DeduplicatedAutomatonNode, DeduplicatedAutomatonNode}}
 
-    @_const _cached_hash::UInt64
+    @_const _cached_hash::UInt
     function DeduplicatedAutomatonNode(action, next)
         action isa BoundCase && @assert action.pattern isa BoundTruePattern
         new(action, next, hash((action, next)))
