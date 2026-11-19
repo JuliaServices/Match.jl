@@ -657,6 +657,23 @@ end
     @test f(2.0) == 3
 end
 
+@testset "range patterns do not match `missing`" begin
+    function range_kind(v)
+        @match v begin
+            1:3         => :int
+            1.0:0.5:2.0 => :float
+            'a':'c'     => :char
+            _           => :other
+        end
+    end
+    @test range_kind(missing) == :other
+    @test range_kind(2) == :int
+    @test range_kind(1.5) == :float
+    @test range_kind('b') == :char
+    @test range_kind(1:3) == :int
+    @test !(@ismatch missing 1:3)
+end
+
 @testset "ensure that enums work" begin
     # @enum Color Yellow Blue Greed
     function f(v)
