@@ -335,14 +335,13 @@ function remove(action::BoundTypeTestPattern, action_result::Bool, pattern::Boun
         elseif pattern.type <: action.type
             # we are asking about a narrower type - result unknown
             return pattern
-        else
-            # Since Julia does not support multiple inheritance, if the two types
-            # are not related by inheritance, then no types that implement both will
-            # ever come into existence.
-            @assert typeintersect(pattern.type, action.type) == Base.Bottom
-
-            # their intersection is empty, so it cannot be pattern.type
+        elseif typeintersect(pattern.type, action.type) === Union{}
+            # no value has both types, so it cannot be pattern.type
             return BoundFalsePattern(loc(pattern), source(pattern))
+        else
+            # the types overlap without either containing the other (for example
+            # `Union{Int,String}` and `Union{Int,Float64}`) - result unknown
+            return pattern
         end
     else
         # the type test failed.

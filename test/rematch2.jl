@@ -188,6 +188,46 @@ end
     @test_throws MatchFailure("test2") @match ::Symbol = "test2"
 end
 
+@testset "type patterns may overlap without one containing the other" begin
+    function union_types(v)
+        @match v begin
+            ::Union{Int,String}  => 1
+            ::Union{Int,Float64} => 2
+            _                    => 3
+        end
+    end
+    @test union_types(1) == 1
+    @test union_types("a") == 1
+    @test union_types(1.0) == 2
+    @test union_types(:a) == 3
+
+    function array_types(v)
+        @match v begin
+            ::Vector{Float64}     => 1
+            ::AbstractArray{Int}  => 2
+            ::Vector              => 3
+            _                     => 4
+        end
+    end
+    @test array_types([1.0]) == 1
+    @test array_types([1]) == 2
+    @test array_types(1:2) == 2
+    @test array_types(["a"]) == 3
+    @test array_types(nothing) == 4
+
+    function tuple_types(v)
+        @match v begin
+            (::Tuple{Int,Any}) where v[2] == 0 => 1
+            ::Tuple{Any,String}                => 2
+            _                                  => 3
+        end
+    end
+    @test tuple_types((1, 0)) == 1
+    @test tuple_types((1, "a")) == 2
+    @test tuple_types(("a", "a")) == 2
+    @test tuple_types((1, 1)) == 3
+end
+
 @testset "bound variables may be used in subsequent interpolations" begin
     let x = nothing, y = nothing
         @test (@match (x, y, $(x + 2)) = (1, 2, 3)) == (1, 2, 3)
