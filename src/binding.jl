@@ -390,7 +390,10 @@ function bind_pattern!(
             # But, NamedTuples are not covariant, so that test would fail if the tuple element is
             # not inferred as exactly Any.
             guard = Expr(:call, :(Base.hasfield), Expr(:call, :(Base.typeof), input), QuoteNode(field_name))
-            pattern = bind_where_clause(guard, false, location, binder, assigned)
+            # List `input` among the guard's assignments so `simplify` keeps the fetch that
+            # computes it, even when no field of `input` is otherwise used.
+            guard_assigned = ImmutableDict{Symbol, Symbol}(assigned, input, input)
+            pattern = bind_where_clause(guard, false, location, binder, guard_assigned)
             push!(conjuncts, pattern)
 
             # Bind the field pattern.
