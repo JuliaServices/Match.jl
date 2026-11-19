@@ -165,12 +165,12 @@ Guards allow a conditional match. They are not a standard part of Julia yet, so 
 ```julia
 function parse_arg(arg::String, value::Any=nothing)
     @match (arg, value) begin
-        ("-l",              lang)    => println("Language set to $lang")
+        ("-l",              lang::String) => println("Language set to $lang")
         ("-o" || "--optim", n::Int),
-        if 0 < n <= 5 end            => println("Optimization level set to $n")
-        ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
-        ("-h" || "--help",  nothing) => println("Help!")
-        bad                          => println("Unknown argument: $bad")
+        if 0 < n <= 5 end                 => println("Optimization level set to $n")
+        ("-o" || "--optim", n::Int)       => println("Illegal optimization level $(n)!")
+        ("-h" || "--help",  ::Nothing)    => println("Help!")
+        bad                               => println("Unknown argument: $bad")
     end
 end
 
@@ -178,7 +178,7 @@ julia> parse_arg("-l", "eng")
 Language set to eng
 
 julia> parse_arg("-l")
-Unknown argument: ("-l",nothing)
+Unknown argument: ("-l", nothing)
 
 julia> parse_arg("-o", 4)
 Optimization level set to 4
@@ -190,7 +190,7 @@ julia> parse_arg("-o", 0)
 Illegal optimization level 0!
 
 julia> parse_arg("-o", 1.0)
-Unknown argument: ("-o",1.0)
+Unknown argument: ("-o", 1.0)
 
 julia> parse_arg("-h")
 Help!
@@ -204,12 +204,12 @@ The alternative guard syntax `pattern where expression` can sometimes be easier 
 ```julia
 function parse_arg(arg::String, value::Any=nothing)
     @match (arg, value) begin
-        ("-l",              lang)    => println("Language set to $lang")
+        ("-l",              lang::String) => println("Language set to $lang")
         ("-o" || "--optim", n::Int) where 0 < n <= 5 =>
-                                        println("Optimization level set to $n")
-        ("-o" || "--optim", n::Int)  => println("Illegal optimization level $(n)!")
-        ("-h" || "--help",  nothing) => println("Help!")
-        bad                          => println("Unknown argument: $bad")
+                                             println("Optimization level set to $n")
+        ("-o" || "--optim", n::Int)       => println("Illegal optimization level $(n)!")
+        ("-h" || "--help",  ::Nothing)    => println("Help!")
+        bad                               => println("Unknown argument: $bad")
     end
 end
 ```
@@ -324,6 +324,10 @@ It is sometimes easier to use the `where` syntax for guards:
         end
     # methods for generic function _iseven
     _iseven(a) at none:1
+
+- `nothing`, `missing`, `NaN` and other named constants are identifiers, so in a pattern
+  they bind a new variable and match any value. Match the constant itself with a type
+  pattern (`::Nothing`, `::Missing`) or an interpolation (`$(NaN)`).
 
 ### `@match_return` macro
 
