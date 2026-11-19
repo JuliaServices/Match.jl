@@ -21,29 +21,25 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.4'
-          - '1.5'
-          - '1.8.2'
-          - '1.9'
-          - '1.10.2'
-          - '1.11'
+          - '1.10' # the [compat] floor
+          - '1'
           - 'nightly'
         os:
           - ubuntu-latest
         arch:
           - x64
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v7
-        if: matrix.version == '1.11'
+        if: matrix.version == '1'
         with:
           files: lcov.info
           use_oidc: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
@@ -55,8 +51,8 @@ jobs:
       pull-requests: read
       statuses: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@v1
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
       - uses: julia-actions/julia-buildpkg@v1
