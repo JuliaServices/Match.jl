@@ -612,6 +612,17 @@ end
       _ => false
     end)
 
+    # Check deep matching when no field of the inner value is otherwise used.
+    @test (@match Foo(Foo(1,2),3) begin
+      (; x=(; y=_)) => true
+      _ => false
+    end)
+    @test (@match Foo(1,2) begin
+      (; x=(; y)) => false # `1` has no field `y`.
+      _ => true
+    end)
+    @test @ismatch Foo(Foo(1,2),3) (; x=(; y=_))
+
     # Check that field names are bound.
     @test (@match Foo(1,2) begin
         (; x, y) => (x, y)
