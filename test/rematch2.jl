@@ -196,6 +196,24 @@ end
     end
 end
 
+@testset "pattern variables may be called as functions" begin
+    @test (@match (abs, -3) begin
+        (fn, x) => fn(x)
+    end) == 3
+    @test (@match (abs, -3) begin
+        (fn, x) where fn(x) > 0 => :guard
+        _ => :other
+    end) == :guard
+    @test (@match (abs, -3, 3) begin
+        (fn, x, $(fn(x))) => :interpolation
+        _ => :other
+    end) == :interpolation
+    @test (@match (fn = abs,) begin
+        holder => holder.fn(-3)
+    end) == 3
+    @test @ismatch (abs, -3) ((fn, x) where fn(x) == 3)
+end
+
 #
 # To print the decision automaton shown in comments below, replace @match_count_nodes
 # with @match_dump and run the test.  To show the full details of how the decision
