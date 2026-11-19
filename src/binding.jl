@@ -173,6 +173,11 @@ function bind_pattern!(
         bound_expression = bind_expression(location, interpolation, assigned)
         pattern = BoundIsMatchTestPattern(input, bound_expression, false)
 
+    elseif is_expr(source, :macrocall)
+        # a macro call such as `r"..."`.  `@match` cases are macro-expanded before
+        # binding, but `@ismatch` and `@match pattern = value` patterns arrive here unexpanded.
+        return bind_pattern!(location, macroexpand(binder.mod, source), input, binder, assigned)
+
     elseif source isa Symbol
         # variable pattern (just a symbol)
         varsymbol::Symbol = source
