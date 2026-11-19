@@ -400,6 +400,22 @@ end
         end
     end
 
+    # Calling such a variable is an error too; it must not fall through to an outer function of the same name.
+    let line = (@__LINE__) + 3, file=(@__FILE__)
+        try
+            @eval @match (:a, isodd) begin
+                (:a, f) | (:b, _) => f(1)
+                _ => false
+            end
+            @test false
+        catch ex
+            @test ex isa LoadError
+            e = ex.error
+            @test e isa ErrorException
+            @test e.msg == "$file:$line: The pattern variable `f` cannot be used because it was defined on only one side of a disjunction."
+        end
+    end
+
 end
 
 @testset "handling of variables defined on one side (only) of a disjunction 4" begin
