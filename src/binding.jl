@@ -611,11 +611,12 @@ end
 #
 # getvars
 #
-# get all symbols in an expression
+# get all symbols in an expression, including called functions such as `f` in `f(x)`,
+# since a pattern variable may hold the function being called.
 #
 getvars(e)         = Set{Symbol}()
 getvars(e::Symbol) = startswith(string(e), '@') ? Set{Symbol}() : push!(Set{Symbol}(), e)
-getvars(e::Expr)   = getvars(is_expr(e, :call) ? e.args[2:end] : e.args)
+getvars(e::Expr)   = getvars(e.args)
 getvars(es::AbstractArray) = union(Set{Symbol}(), [getvars(e) for e in es]...)
 
 #
