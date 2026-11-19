@@ -1,6 +1,7 @@
 # compute whether or not a constant pattern matches a value at runtime
 pattern_matches_value(pattern, input) = isequal(pattern, input)
-pattern_matches_value(r::AbstractRange, i) = i in r || isequal(i, r)
+# `in` returns `missing` for a `missing` input; that value is not in the range.
+pattern_matches_value(r::AbstractRange, i) = coalesce(i in r, false) || isequal(i, r)
 # For compat with Match.jl we permit a Regex to match an identical Regex by isequal
 pattern_matches_value(r::Regex, s::AbstractString) = occursin(r, s)
 
